@@ -12,3 +12,15 @@ database_id = "00000000-0000-0000-0000-000000000000"  # troque pelo id do seu D1
 binding = "AUTH_DB"
 database_name = "minha-casa-acesso"
 database_id = "11111111-1111-1111-1111-111111111111"  # troque pelo id do seu D1 de login
+
+# --- Para recriar (exemplos; ajuste à sua conta) ---
+# Envio de e-mail (Cloudflare Email Routing / send_email), usado por src/alertas.js como env.EMAIL:
+# [[send_email]]
+# name = "EMAIL"
+# destination_address = "admin@exemplo.com"
+#
+# Relatório diário (seg a sex, 18h de Brasília = 21h UTC):
+# [triggers]
+# crons = ["0 21 * * 1-5"]
+#
+# Secrets (não vão no arquivo): npx wrangler secret put PEPPER   (e SYNC_TOKEN, se usar o agente do Mac)
