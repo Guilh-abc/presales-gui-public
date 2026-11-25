@@ -1,0 +1,828 @@
+/* presales-kanzo — Mac=fonte de verdade; allowlist própria; login lê senha da Casa só se allowlisted */
+'use strict';
+var ITER = 100000, SESSAO_S = 30 * 86400, COOKIE = '__Host-mco';
+var JANELA_S = 900, MAX_FALHAS = 5, BLOQ_S = 900, MAX_IP = 20, MAC_ONLINE_S = 90, MAX_USERS = 4;
+var ADMIN_EMAIL = 'admin@exemplo.com';
+var STAGE_ORDER = ['hold','tarefas-internas-henrique','recebimento-do-projeto','processo-de-cotacao','precificacao','processo-aprovacao-precificacao','apresentacao-executiva','fechamento','ganho-handoff','projeto-longo-prazo','old-falhou'];
+var STAGE_LABEL = {
+  'hold':'Hold','tarefas-internas-henrique':'Tarefas internas','recebimento-do-projeto':'Recebimento do projeto',
+  'processo-de-cotacao':'Processo de cotação','precificacao':'Precificação','processo-aprovacao-precificacao':'Aprovação precificação',
+  'apresentacao-executiva':'Apresentação executiva','fechamento':'Fechamento','ganho-handoff':'Ganho / Handoff',
+  'projeto-longo-prazo':'Projeto longo prazo','old-falhou':'Old/Falhou'
+};
+var enc = new TextEncoder();
+var cacheSessao = new Map();
+
+function agora() { return Math.floor(Date.now() / 1000); }
+function iso() { return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'); }
+function b64(u8) { var s = ''; for (var i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]); return btoa(s); }
+function ub64(s) { var b = atob(s), u = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
+function b64u(u8) { return b64(u8).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function hex(buf) { return Array.prototype.map.call(new Uint8Array(buf), function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); }
+function aleatorio(n) { var u = new Uint8Array(n); crypto.getRandomValues(u); return u; }
+async function sha256(txt) { return hex(await crypto.subtle.digest('SHA-256', enc.encode(txt))); }
+function iguais(a, b) { if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false; var r = 0; for (var i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i); return r === 0; }
+async function derivar(senha, salt, iter, pepper) {
+  var k = await crypto.subtle.importKey('raw', enc.encode(senha), 'PBKDF2', false, ['deriveBits']);
+  var bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: salt, iterations: iter }, k, 256);
+  var hk = await crypto.subtle.importKey('raw', enc.encode(pepper || ''), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return hex(await crypto.subtle.sign('HMAC', hk, bits));
+}
+async function criarHash(senha, env) { var salt = aleatorio(16); return 'v1$' + ITER + '$' + b64(salt) + '$' + await derivar(senha, salt, ITER, env.PEPPER); }
+async function conferirSenha(senha, guardado, env) {
+  var p = String(guardado || '').split('$');
+  if (p.length !== 4 || p[0] !== 'v1') { await derivar(senha, new Uint8Array(16), ITER, env.PEPPER); return false; }
+  return iguais(await derivar(senha, ub64(p[2]), parseInt(p[1], 10) || ITER, env.PEPPER), p[3]);
+}
+
+var CSP = "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
+function seguranca(h, tipo) {
+  h.set('Content-Security-Policy', CSP); h.set('X-Content-Type-Options', 'nosniff'); h.set('Referrer-Policy', 'no-referrer');
+  h.set('X-Frame-Options', 'DENY'); h.set('Strict-Transport-Security', 'max-age=31536000');
+  if (tipo !== 'ativo') h.set('Cache-Control', 'no-store'); else h.set('Cache-Control', 'private, no-cache');
+  return h;
+}
+function json(obj, status, extra) {
+  var h = new Headers({ 'Content-Type': 'application/json; charset=utf-8' });
+  if (extra) Object.keys(extra).forEach(function (k) { h.append(k, extra[k]); });
+  return new Response(JSON.stringify(obj), { status: status || 200, headers: seguranca(h) });
+}
+function html(corpo, status) { return new Response(corpo, { status: status || 200, headers: seguranca(new Headers({ 'Content-Type': 'text/html; charset=utf-8' })) }); }
+function js(corpo) { return new Response(corpo, { headers: seguranca(new Headers({ 'Content-Type': 'text/javascript; charset=utf-8' })) }); }
+function redirecionar(url, status) { return new Response(null, { status: status || 302, headers: seguranca(new Headers({ Location: url })) }); }
+function cookieSessao(token, seg) { return COOKIE + '=' + token + '; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=' + seg; }
+function lerCookie(req) {
+  var c = req.headers.get('Cookie') || '', m = c.split(/;\s*/);
+  for (var i = 0; i < m.length; i++) { var p = m[i].split('='); if (p[0] === COOKIE) return p.slice(1).join('='); }
+  return '';
+}
+function mesmaOrigem(req) { var o = req.headers.get('Origin'); return !!o && o === new URL(req.url).origin; }
+async function corpoJson(req) {
+  if (!/^application\/json/i.test(req.headers.get('Content-Type') || '')) return null;
+  var t = await req.text(); if (t.length > 500000) return null;
+  try { var o = JSON.parse(t); return o && typeof o === 'object' ? o : null; } catch (e) { return null; }
+}
+function authDB(env) { return env.AUTH_DB; }
+function dataDB(env) { return env.DATA; }
+function syncOk(req, env) {
+  var t = req.headers.get('X-Presales-Sync-Token') || '';
+  return !!(env.SYNC_TOKEN && t && iguais(t, env.SYNC_TOKEN));
+}
+function isAdmin(s) { return !!(s && s.papel === 'admin'); }
+function requireWrite(req, s) {
+  if (!s) return json({ erro: 'Entre para continuar.', error: 'auth' }, 401);
+  if (!isAdmin(s)) return json({ erro: 'Somente o admin pode alterar.', error: 'forbidden' }, 403);
+  if (!mesmaOrigem(req) || req.headers.get('X-MCO') !== '1') return json({ erro: 'Origem não permitida.' }, 403);
+  return null;
+}
+
+async function ensureSchema(env) {
+  // idempotent bootstrap tables for access control (DATA only — never mutates Casa schema)
+  if (env.__schemaReady) return;
+  var db = dataDB(env);
+  await db.batch([
+    db.prepare('CREATE TABLE IF NOT EXISTS presales_users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL UNIQUE, nome TEXT NOT NULL, papel TEXT NOT NULL DEFAULT \'viewer\', ativo INTEGER NOT NULL DEFAULT 1, senha TEXT, falhas INTEGER NOT NULL DEFAULT 0, bloqueado_ate INTEGER NOT NULL DEFAULT 0, criado_em INTEGER, atualizado_em INTEGER)'),
+    db.prepare('CREATE TABLE IF NOT EXISTS presales_sessoes (id_hash TEXT PRIMARY KEY, usuario_id INTEGER NOT NULL, criada_em INTEGER NOT NULL, expira_em INTEGER NOT NULL, visto_em INTEGER NOT NULL, agente TEXT)'),
+    db.prepare('CREATE TABLE IF NOT EXISTS presales_tentativas (chave TEXT PRIMARY KEY, n INTEGER NOT NULL, ini INTEGER NOT NULL)'),
+    db.prepare('CREATE TABLE IF NOT EXISTS card_id_map (temp_id INTEGER PRIMARY KEY, real_id INTEGER NOT NULL, real_key TEXT NOT NULL, created_at TEXT NOT NULL)')
+  ]);
+  var adm = await db.prepare('SELECT id FROM presales_users WHERE email = ?').bind(ADMIN_EMAIL).first();
+  if (!adm) {
+    var t = agora();
+    await db.prepare('INSERT INTO presales_users (email, nome, papel, ativo, senha, criado_em, atualizado_em) VALUES (?,?,?,?,NULL,?,?)')
+      .bind(ADMIN_EMAIL, 'Guilherme', 'admin', 1, t, t).run();
+  } else {
+    await db.prepare('UPDATE presales_users SET papel = ?, ativo = 1 WHERE email = ?').bind('admin', ADMIN_EMAIL).run();
+  }
+  env.__schemaReady = true;
+}
+
+async function metaGet(env, key) {
+  var r = await dataDB(env).prepare('SELECT value FROM meta WHERE key = ?').bind(key).first();
+  return r ? r.value : null;
+}
+async function metaSet(env, key, value) {
+  await dataDB(env).prepare('INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').bind(key, value).run();
+}
+
+/* Mapa id temporário da nuvem (ex. 100060) → id real do Mac (#60). Preenchido no /sync/ack do create. */
+async function saveCardIdMap(env, tempId, realId, realKey) {
+  if (!tempId || !realId) return;
+  await dataDB(env).prepare('INSERT INTO card_id_map (temp_id, real_id, real_key, created_at) VALUES (?,?,?,?) ON CONFLICT(temp_id) DO UPDATE SET real_id = excluded.real_id, real_key = excluded.real_key, created_at = excluded.created_at')
+    .bind(Number(tempId), Number(realId), String(realKey || ('pre-vendas#' + realId)), iso()).run();
+}
+async function lookupCardIdMap(env, tempId) {
+  if (tempId == null || tempId === '') return null;
+  return await dataDB(env).prepare('SELECT temp_id, real_id, real_key FROM card_id_map WHERE temp_id = ?').bind(Number(tempId)).first();
+}
+function parseRealFromAck(res, payload) {
+  var realId = res && res.real_id != null ? Number(res.real_id) : null;
+  var realKey = res && res.real_key ? String(res.real_key) : null;
+  var tempId = res && res.temp_id != null ? Number(res.temp_id) : (payload && payload.temp_id != null ? Number(payload.temp_id) : null);
+  if (!realId || !realKey) {
+    var text = '';
+    if (res && res.out != null) text = typeof res.out === 'string' ? res.out : JSON.stringify(res.out);
+    var m = String(text).match(/([A-Za-z0-9_-]+)#(\d+)/);
+    if (m) { realKey = realKey || (m[1] + '#' + m[2]); realId = realId || parseInt(m[2], 10); }
+  }
+  return { tempId: tempId, realId: realId, realKey: realKey };
+}
+async function rewritePendingForTempId(env, tempId, realId, realKey) {
+  var db = dataDB(env);
+  var rows = (await db.prepare("SELECT id, entity_id, payload_json FROM pending_commands WHERE status = 'pending'").all()).results || [];
+  var tip = String(tempId), rid = String(realId);
+  for (var i = 0; i < rows.length; i++) {
+    var row = rows[i], payload = {}; try { payload = JSON.parse(row.payload_json || '{}'); } catch (e) { payload = {}; }
+    var changed = false, entityId = row.entity_id;
+    if (entityId === tip) { entityId = rid; changed = true; }
+    if (payload.id != null && String(payload.id).split('#').pop() === tip) { payload.id = realKey; changed = true; }
+    if (payload.temp_id != null && Number(payload.temp_id) === Number(tempId)) { /* keep temp_id for audit */ }
+    if (changed) {
+      await db.prepare('UPDATE pending_commands SET entity_id = ?, payload_json = ? WHERE id = ?')
+        .bind(entityId, JSON.stringify(payload), row.id).run();
+    }
+  }
+  // espelho: remove o card temporário (o push do Mac traz o real)
+  await db.prepare('UPDATE cards SET deleted_at = COALESCE(deleted_at, ?), pending = 0, updated_at = ? WHERE id = ?')
+    .bind(iso(), iso(), Number(tempId)).run();
+}
+async function resolveMacTarget(env, id) {
+  var map = await lookupCardIdMap(env, id);
+  if (map) return { id: map.real_id, key: map.real_key, temp_id: map.temp_id, mapped: true };
+  var card = await getCard(env, id);
+  if (card) return { id: card.id, key: card.key || ('pre-vendas#' + card.id), mapped: false };
+  return { id: id, key: 'pre-vendas#' + id, mapped: false };
+}
+
+async function audit(env, s, action, entity, entityId, before, after, req) {
+  await dataDB(env).prepare('INSERT INTO audit_log (at, actor_email, actor_id, action, entity, entity_id, before_json, after_json, ip) VALUES (?,?,?,?,?,?,?,?,?)')
+    .bind(iso(), s && s.email || null, s && s.id || null, action, entity, entityId == null ? null : String(entityId),
+      before == null ? null : JSON.stringify(before), after == null ? null : JSON.stringify(after),
+      req ? (req.headers.get('CF-Connecting-IP') || '') : '').run();
+}
+async function enqueue(env, s, op, entity, entityId, payload) {
+  var r = await dataDB(env).prepare('INSERT INTO pending_commands (created_at, status, op, entity, entity_id, payload_json, actor_email) VALUES (?,?,?,?,?,?,?)')
+    .bind(iso(), 'pending', op, entity, entityId == null ? null : String(entityId), JSON.stringify(payload || {}), s && s.email || null).run();
+  return r.meta && r.meta.last_row_id;
+}
+
+async function sessaoDe(req, env) {
+  var tk = lerCookie(req); if (!/^[A-Za-z0-9_-]{40,60}$/.test(tk)) return null;
+  var h = await sha256(tk), c = cacheSessao.get(h), t = agora();
+  if (c && c.ate > t && c.ver > Date.now() - 60000) return c.u;
+  var r = await dataDB(env).prepare('SELECT s.expira_em, s.visto_em, u.id, u.nome, u.email, u.papel, u.ativo FROM presales_sessoes s JOIN presales_users u ON u.id = s.usuario_id WHERE s.id_hash = ?').bind(h).first();
+  if (!r || r.expira_em < t || !r.ativo) { cacheSessao.delete(h); return null; }
+  if (t - r.visto_em > 3600) await dataDB(env).prepare('UPDATE presales_sessoes SET visto_em = ? WHERE id_hash = ?').bind(t, h).run();
+  var u = { id: r.id, nome: r.nome, email: r.email, papel: r.papel, hash: h };
+  if (cacheSessao.size > 200) cacheSessao.clear();
+  cacheSessao.set(h, { u: u, ate: r.expira_em, ver: Date.now() }); return u;
+}
+async function abrirSessao(env, usuarioId, req) {
+  var tk = b64u(aleatorio(32)), h = await sha256(tk), t = agora();
+  await dataDB(env).prepare('DELETE FROM presales_sessoes WHERE expira_em < ?').bind(t).run();
+  await dataDB(env).prepare('INSERT INTO presales_sessoes (id_hash, usuario_id, criada_em, expira_em, visto_em, agente) VALUES (?,?,?,?,?,?)')
+    .bind(h, usuarioId, t, t + SESSAO_S, t, (req.headers.get('User-Agent') || '').slice(0, 120)).run();
+  return tk;
+}
+async function limiteIp(req, env, rota) {
+  var ip = req.headers.get('CF-Connecting-IP') || 'x', k = (await sha256('ip|' + ip + '|' + rota)).slice(0, 24), t = agora();
+  var r = await dataDB(env).prepare('SELECT n, ini FROM presales_tentativas WHERE chave = ?').bind(k).first();
+  if (!r || t - r.ini > JANELA_S) { await dataDB(env).prepare('INSERT OR REPLACE INTO presales_tentativas (chave, n, ini) VALUES (?,1,?)').bind(k, t).run(); return false; }
+  await dataDB(env).prepare('UPDATE presales_tentativas SET n = n + 1 WHERE chave = ?').bind(k).run();
+  return r.n + 1 > MAX_IP;
+}
+
+async function syncStatus(env) {
+  var lastPush = await metaGet(env, 'last_push_at');
+  var lastPull = await metaGet(env, 'last_pull_at');
+  var lastSnap = await metaGet(env, 'last_snapshot_at');
+  var host = await metaGet(env, 'mac_hostname');
+  var pending = await dataDB(env).prepare("SELECT COUNT(*) AS n FROM pending_commands WHERE status = 'pending'").first();
+  var cards = await dataDB(env).prepare('SELECT COUNT(*) AS n FROM cards WHERE deleted_at IS NULL').first();
+  var falhas = await dataDB(env).prepare("SELECT COUNT(*) AS n FROM pending_commands WHERE status = 'failed' AND applied_at > ?").bind(new Date(Date.now() - 7 * 86400000).toISOString()).first();
+  var online = false, msg = null;
+  var visto = [lastPush, lastPull, lastSnap].filter(Boolean).sort().pop() || null;
+  if (visto) {
+    var age = (Date.now() - Date.parse(visto)) / 1000;
+    online = age <= MAC_ONLINE_S;
+    if (!online) msg = 'Sem contato do Mac há mais de ' + MAC_ONLINE_S + ' s (Mac desligado, dormindo ou sem internet).';
+  } else msg = 'Aguardando primeira sincronização do Mac';
+  return {
+    mac_online: online, last_seen_at: visto, last_push_at: lastPush, last_pull_at: lastPull, last_snapshot_at: lastSnap,
+    mac_hostname: host, pending_commands: (pending && pending.n) || 0, mirror_cards: (cards && cards.n) || 0, failed_commands_7d: (falhas && falhas.n) || 0,
+    source: 'kanzo-mac', message: msg
+  };
+}
+
+function parseTags(tags) {
+  if (Array.isArray(tags)) return tags.map(String).map(function (t) { return t.trim(); }).filter(Boolean);
+  return String(tags || '').split(',').map(function (t) { return t.trim(); }).filter(Boolean);
+}
+function stageFromTags(tags) {
+  for (var i = 0; i < tags.length; i++) if (tags[i].indexOf('stage:') === 0) return tags[i].slice(6);
+  return null;
+}
+function prioridadeFromTags(tags) {
+  for (var i = 0; i < tags.length; i++) if (tags[i].indexOf('prioridade:') === 0) return tags[i].slice(11);
+  return null;
+}
+function solutionFromTags(tags) {
+  for (var i = 0; i < tags.length; i++) if (tags[i].indexOf('solucao:') === 0) return tags[i].slice(8);
+  return 'A definir';
+}
+function solutionFromDescription(desc) {
+  var m = String(desc || '').match(/\*\*Solu[cç][aã]o \/ Escopo:\*\*\s*(.+)/i);
+  if (!m) return null;
+  return m[1].split('\n')[0].trim();
+}
+
+function numeroBR(s) {
+  var m = String(s || '').match(/-?\d{1,3}(?:\.\d{3})*(?:,\d+)?|-?\d+(?:,\d+)?/);
+  if (!m) return null;
+  var v = parseFloat(m[0].replace(/\./g, '').replace(',', '.'));
+  return isFinite(v) ? v : null;
+}
+function limpaMd(s) { return String(s || '').replace(/\*\*/g, '').replace(/`/g, '').trim(); }
+/* Igual ao format.js do front: TCV/MRC/OTC só de linhas de tabela markdown com rótulo explícito. Sem chute. */
+function valoresDaDescricao(desc) {
+  var out = { tcv: null, mrc: null, otc: null, prazo_meses: null };
+  String(desc || '').split('\n').forEach(function (linha) {
+    var l = linha.trim();
+    if (l.charAt(0) !== '|') return;
+    var cel = l.split('|').map(limpaMd).filter(function (c) { return c !== ''; });
+    if (!cel.length) return;
+    var rot = cel[0];
+    var re = /R\$\s*-?[\d.]+(?:,\d+)?(\s*\/\s*m[eê]s)?/gi, m, vals = [], mensal = null;
+    var bruto = limpaMd(l);
+    while ((m = re.exec(bruto))) { var v = numeroBR(m[0]); vals.push(v); if (m[1]) mensal = v; }
+    if (!vals.length) return;
+    var ultimo = vals[vals.length - 1];
+    var line = bruto.replace(/\s*\|\s*/g, ' | ').replace(/^\s*\|\s*|\s*\|\s*$/g, '');
+    if (/^TCV\b/i.test(rot)) {
+      out.tcv = ultimo; out.tcv_line = line;
+      var pm = rot.match(/(\d+)\s*(?:m\b|meses)/i); if (pm) out.prazo_meses = +pm[1];
+    } else if (/^MRC\b/i.test(rot)) { out.mrc = ultimo; out.mrc_line = line; }
+    else if (/^OTC\b/i.test(rot)) { out.otc = ultimo; out.otc_line = line; }
+    else if (/^TOTAL$/i.test(rot) && out.tcv == null) {
+      out.tcv = ultimo; out.tcv_line = line;
+      if (mensal != null && out.mrc == null) { out.mrc = mensal; out.mrc_line = line; }
+    }
+  });
+  // drop nulls for clean empty {}
+  var clean = {};
+  Object.keys(out).forEach(function (k) { if (out[k] != null) clean[k] = out[k]; });
+  return clean;
+}
+
+
+/* Prazo efetivo = Prazo (Kanzo) se existir; senão Data de conclusão do Planner. */
+function prazoEfetivoFromDescription(desc) {
+  var kanzo = null, planner = null;
+  String(desc || '').split('\n').forEach(function (linha) {
+    var m = linha.match(/^\s*\*\*([^*\n]{2,60}?):\*\*\s*(.*)$/);
+    if (!m) return;
+    var rot = m[1].trim(), val = m[2];
+    if (/^Prazo \(Kanzo\)$/i.test(rot)) {
+      var d = String(val).match(/(\d{4}-\d{2}-\d{2})/); if (d) kanzo = d[1];
+    } else if (/^Datas Planner/i.test(rot)) {
+      var p = String(val).match(/Data de conclus[aã]o:\s*(\d{4}-\d{2}-\d{2})/i); if (p) planner = p[1];
+    }
+  });
+  return kanzo || planner || null;
+}
+function hojeBrasiliaISO(d) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(d || new Date());
+}
+/* Fonte da verdade do atraso: due < hoje (Brasília) e card não concluído. Tag "atrasado" ignorada. */
+function isAtrasadoStatus(status, desc, agora) {
+  if (status === 'done') return false;
+  var p = prazoEfetivoFromDescription(desc);
+  if (!p || !/^\d{4}-\d{2}-\d{2}$/.test(p)) return false;
+  var hoje = hojeBrasiliaISO(agora ? new Date(agora) : new Date());
+  var dias = Math.round((Date.parse(p + 'T00:00:00Z') - Date.parse(hoje + 'T00:00:00Z')) / 86400000);
+  return dias < 0;
+}
+
+function cardDTO(r, comments) {
+  var tags = []; try { tags = JSON.parse(r.tags_json || '[]'); } catch (e) { tags = []; }
+  var labels = tags.filter(function (t) { return t.indexOf('rotulo:') === 0; }).map(function (t) { return t.slice(7); });
+  var stage = r.stage || stageFromTags(tags);
+  return {
+    id: r.id, project_id: r.project_id, key: r.key, title: r.title, description: r.description || '',
+    status: r.status, stage: stage, stage_label: STAGE_LABEL[stage] || stage, status_label: r.status,
+    tags: tags, priority: r.prioridade || prioridadeFromTags(tags), prioridade: r.prioridade || prioridadeFromTags(tags),
+    labels: labels, atrasado: isAtrasadoStatus(r.status, r.description), solution: solutionFromDescription(r.description) || solutionFromTags(tags),
+    url: r.url || '', human: !!r.human, product_id: r.product_id, solution_id: r.solution_id,
+    pending: !!r.pending, values: valoresDaDescricao(r.description), planner: {},
+    created_at: r.created_at, updated_at: r.updated_at, deleted_at: r.deleted_at || null,
+    active: !r.deleted_at, comments_count: comments ? comments.length : (r.comments_count || 0),
+    comments: (comments || []).map(function (c) { return { id: c.id, author: c.author, body: c.body, created_at: c.created_at }; })
+  };
+}
+
+async function apiLogin(req, env) {
+  if (!mesmaOrigem(req) || req.headers.get('X-MCO') !== '1') return json({ erro: 'Origem não permitida.' }, 403);
+  var b = await corpoJson(req); if (!b) return json({ erro: 'Pedido inválido.' }, 400);
+  if (await limiteIp(req, env, 'login')) return json({ erro: 'Muitas tentativas. Aguarde alguns minutos.' }, 429);
+  var email = String(b.email || '').trim().toLowerCase().slice(0, 120), senha = String(b.senha || '').slice(0, 200), t = agora();
+  var u = await dataDB(env).prepare('SELECT * FROM presales_users WHERE email = ?').bind(email).first();
+  // timing-safe-ish: always do a hash work
+  if (u && u.bloqueado_ate > t) { await derivar(senha, new Uint8Array(16), ITER, env.PEPPER); return json({ erro: 'Conta bloqueada. Tente mais tarde.' }, 429); }
+  var ok = false;
+  if (u && u.ativo) {
+    if (u.senha) ok = await conferirSenha(senha, u.senha, env);
+    else if (authDB(env)) {
+      var casa = await authDB(env).prepare('SELECT senha, ativo FROM usuarios WHERE email = ?').bind(email).first();
+      ok = !!(casa && casa.ativo && await conferirSenha(senha, casa.senha, env));
+    } else {
+      await derivar(senha, new Uint8Array(16), ITER, env.PEPPER); ok = false;
+    }
+  } else {
+    await derivar(senha, new Uint8Array(16), ITER, env.PEPPER); ok = false;
+  }
+  if (!u || !ok) {
+    if (u) {
+      var f = (u.falhas || 0) + 1;
+      await dataDB(env).prepare('UPDATE presales_users SET falhas = ?, bloqueado_ate = ? WHERE id = ?')
+        .bind(f >= MAX_FALHAS ? 0 : f, f >= MAX_FALHAS ? t + BLOQ_S : 0, u.id).run();
+    }
+    return json({ erro: 'E-mail ou senha incorretos.' }, 401);
+  }
+  if (u.falhas) await dataDB(env).prepare('UPDATE presales_users SET falhas = 0, bloqueado_ate = 0 WHERE id = ?').bind(u.id).run();
+  var tk = await abrirSessao(env, u.id, req);
+  return json({ ok: true, papel: u.papel }, 200, { 'Set-Cookie': cookieSessao(tk, SESSAO_S) });
+}
+async function apiLogout(req, env, s) {
+  if (!mesmaOrigem(req) || req.headers.get('X-MCO') !== '1') return json({ erro: 'Origem não permitida.' }, 403);
+  if (s) { await dataDB(env).prepare('DELETE FROM presales_sessoes WHERE id_hash = ?').bind(s.hash).run(); cacheSessao.delete(s.hash); }
+  return json({ ok: true }, 200, { 'Set-Cookie': cookieSessao('', 0) + '; Expires=Thu, 01 Jan 1970 00:00:00 GMT' });
+}
+
+async function getSummary(env) {
+  var st = await syncStatus(env);
+  var allRows = await dataDB(env).prepare('SELECT id, title, stage, status, description, updated_at FROM cards WHERE deleted_at IS NULL').all();
+  var byStatus = {}, byStage = {}, atrasados = 0, total = 0, open = 0, actionCand = [];
+  (allRows.results || []).forEach(function (r) {
+    byStatus[r.status] = (byStatus[r.status] || 0) + 1;
+    if (r.stage) byStage[r.stage] = (byStage[r.stage] || 0) + 1;
+    var atr = isAtrasadoStatus(r.status, r.description);
+    if (atr) atrasados++;
+    total++; if (r.status !== 'done') open++;
+    if (atr || r.status === 'todo' || r.status === 'doing') actionCand.push({ id: r.id, title: r.title, stage: r.stage, status: r.status, atr: atr, updated: r.updated_at });
+  });
+  var proj = await dataDB(env).prepare('SELECT slug, name FROM projects WHERE deleted_at IS NULL ORDER BY id LIMIT 1').first();
+  actionCand.sort(function (a, b) { return (b.atr - a.atr) || String(b.updated || '').localeCompare(String(a.updated || '')); });
+  var actionNow = actionCand.slice(0, 12).map(function (r) {
+    var reasons = []; if (r.atr) reasons.push('atrasado'); if (r.status === 'todo') reasons.push('todo');
+    return { id: r.id, title: r.title, stage: r.stage, status: r.status, reasons: reasons };
+  });
+  var allDesc = { results: allRows.results || [] };
+  var tcvSum = 0, mrcSum = 0, otcSum = 0, withTcv = [];
+  (allDesc.results || []).forEach(function (row) {
+    var v = valoresDaDescricao(row.description);
+    if (typeof v.tcv === 'number') { tcvSum += v.tcv; withTcv.push({ id: row.id, title: row.title, tcv: v.tcv, mrc: v.mrc == null ? null : v.mrc, otc: v.otc == null ? null : v.otc }); }
+    if (typeof v.mrc === 'number') mrcSum += v.mrc;
+    if (typeof v.otc === 'number') otcSum += v.otc;
+  });
+  withTcv.sort(function (a, b) { return b.tcv - a.tcv; });
+  return {
+    synced_at: st.last_push_at, sync: st, project: proj || null,
+    totals: { cards: total, open: open, done: byStatus.done || 0, atrasados: atrasados, by_status: byStatus, by_stage: byStage, tcv: tcvSum, mrc: mrcSum, otc: otcSum, tcv_cards: withTcv.length },
+    tcv_cards: withTcv, action_now: actionNow
+  };
+}
+
+async function listCards(env, url) {
+  var status = url.searchParams.get('status');
+  var stage = url.searchParams.get('stage');
+  var q = url.searchParams.get('q');
+  var includeDeleted = url.searchParams.get('include_deleted') === '1';
+  var limit = Math.min(parseInt(url.searchParams.get('limit') || '500', 10) || 500, 500);
+  var offset = parseInt(url.searchParams.get('offset') || '0', 10) || 0;
+  var sql = 'SELECT c.*, (SELECT COUNT(*) FROM comments x WHERE x.card_id = c.id AND x.deleted_at IS NULL) AS comments_count FROM cards c WHERE 1=1';
+  var binds = [];
+  if (!includeDeleted) sql += ' AND c.deleted_at IS NULL';
+  if (status) { sql += ' AND c.status = ?'; binds.push(status); }
+  if (stage) { sql += ' AND c.stage = ?'; binds.push(stage); }
+  if (q) { sql += ' AND (c.title LIKE ? OR c.description LIKE ?)'; binds.push('%' + q + '%', '%' + q + '%'); }
+  sql += ' ORDER BY c.updated_at DESC LIMIT ? OFFSET ?'; binds.push(limit, offset);
+  var stmt = dataDB(env).prepare(sql);
+  var r = await stmt.bind.apply(stmt, binds).all();
+  var cards = (r.results || []).map(function (row) { return cardDTO(row); });
+  // attach comments lightly? list without full comments for speed; drawer fetches by id
+  var synced = await metaGet(env, 'last_push_at');
+  return { synced_at: synced, meta: { updated_at: synced }, total: cards.length, cards: cards };
+}
+async function getCard(env, id) {
+  var r = await dataDB(env).prepare('SELECT * FROM cards WHERE id = ?').bind(id).first();
+  if (!r) return null;
+  var cs = await dataDB(env).prepare('SELECT * FROM comments WHERE card_id = ? AND deleted_at IS NULL ORDER BY id').bind(id).all();
+  return cardDTO(r, cs.results || []);
+}
+
+async function replaceMirrorFromPush(env, body) {
+  var projects = body.projects || [];
+  var now = body.exported_at || iso();
+  var db = dataDB(env);
+  var stmts = [];
+  stmts.push(db.prepare('DELETE FROM comments'));
+  stmts.push(db.prepare('DELETE FROM cards'));
+  stmts.push(db.prepare('DELETE FROM projects'));
+  var seenIds = {}, nCards = 0, nComments = 0;
+  for (var i = 0; i < projects.length; i++) {
+    var p = projects[i];
+    stmts.push(db.prepare('INSERT INTO projects (id, slug, name, created_at, updated_at, deleted_at) VALUES (?,?,?,?,?,NULL)')
+      .bind(p.id, p.slug, p.name || p.slug, p.created_at || now, now));
+    var tasks = p.tasks || [];
+    for (var j = 0; j < tasks.length; j++) {
+      var t = tasks[j];
+      var tags = parseTags(t.tags);
+      var stage = stageFromTags(tags);
+      var prior = prioridadeFromTags(tags);
+      var atrasado = isAtrasadoStatus(t.status || 'todo', t.description || '') ? 1 : 0;
+      var key = t.key || (p.slug + '#' + t.id);
+      seenIds[String(t.id)] = 1;
+      stmts.push(db.prepare('INSERT INTO cards (id, project_id, key, title, description, status, stage, tags_json, prioridade, atrasado, url, human, pending, created_at, updated_at, deleted_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,0,?,?,NULL)')
+        .bind(t.id, p.id, key, t.title || '', t.description || '', t.status || 'todo', stage, JSON.stringify(tags), prior, atrasado, t.url || '', t.human ? 1 : 0, t.created_at || now, t.updated_at || now));
+      nCards++;
+      var comments = t.comments || [];
+      for (var k = 0; k < comments.length; k++) {
+        var c = comments[k];
+        stmts.push(db.prepare('INSERT INTO comments (id, card_id, author, body, pending, created_at, updated_at, deleted_at) VALUES (?,?,?,?,0,?,?,NULL)')
+          .bind(c.id, t.id, c.author || 'kanzo', c.body || '', c.created_at || now, c.created_at || now));
+        nComments++;
+      }
+    }
+  }
+  for (var off = 0; off < stmts.length; off += 80) await db.batch(stmts.slice(off, off + 80));
+  // v3 (precisa OK do Guilherme): antes, todo comando ainda pendente de um card presente no push virava
+  // 'superseded' e NUNCA chegava ao Mac (edição perdida em silêncio). Agora o comando continua na fila
+  // e o efeito dele é reaplicado no espelho até o Mac aplicar e dar ack.
+  var reaplicados = await reaplicarPendentes(env, seenIds, now);
+  await metaSet(env, 'last_push_at', now);
+  await metaSet(env, 'mac_hostname', body.hostname || '');
+  await metaSet(env, 'source_export', now);
+  if (body.snapshot) await metaSet(env, 'last_snapshot_at', now);
+  await audit(env, { email: 'sync-agent' }, body.snapshot ? 'snapshot' : 'sync_push', 'mirror', null, null, { projects: projects.length, cards: nCards, comments: nComments, exported_at: now }, null);
+  return { ok: true, synced_at: now, cards: nCards, comments: nComments, pending_reapplied: reaplicados };
+}
+
+
+/* v3: reaplica no espelho o efeito dos comandos que o Mac ainda não aplicou. */
+async function reaplicarPendentes(env, seenIds, now) {
+  var db = dataDB(env), n = 0;
+  var rows = (await db.prepare("SELECT id, op, entity, entity_id, payload_json, actor_email, created_at FROM pending_commands WHERE status = 'pending' ORDER BY id").all()).results || [];
+  for (var x = 0; x < rows.length; x++) {
+    var row = rows[x], payload = {}; try { payload = JSON.parse(row.payload_json || '{}'); } catch (e) {}
+    var cid = row.entity_id ? parseInt(row.entity_id, 10) : null;
+    if (row.op === 'update_task' && cid) {
+      var cur = await db.prepare('SELECT * FROM cards WHERE id = ?').bind(cid).first(); if (!cur) continue;
+      var tags = payload.tags != null ? parseTags(payload.tags) : (function () { try { return JSON.parse(cur.tags_json || '[]'); } catch (e) { return []; } })();
+      await db.prepare('UPDATE cards SET title = ?, description = ?, status = ?, stage = ?, tags_json = ?, prioridade = ?, atrasado = ?, url = ?, human = ?, pending = 1 WHERE id = ?')
+        .bind(payload.title != null ? String(payload.title) : cur.title, payload.description != null ? String(payload.description) : cur.description,
+          payload.status != null ? String(payload.status) : cur.status, stageFromTags(tags) || cur.stage, JSON.stringify(tags), prioridadeFromTags(tags),
+          isAtrasadoStatus(payload.status != null ? String(payload.status) : cur.status, payload.description != null ? String(payload.description) : cur.description) ? 1 : 0, payload.url != null ? String(payload.url) : cur.url, payload.human != null ? (payload.human ? 1 : 0) : cur.human, cid).run();
+      n++;
+    } else if (row.op === 'delete_task' && cid) {
+      await db.prepare('UPDATE cards SET deleted_at = ?, pending = 1 WHERE id = ?').bind(now, cid).run(); n++;
+    } else if (row.op === 'add_comment' && cid) {
+      await db.prepare('INSERT OR IGNORE INTO comments (id, card_id, author, body, pending, created_at, updated_at, deleted_at) VALUES (?,?,?,?,1,?,?,NULL)')
+        .bind(900000000 + row.id, cid, payload.author || row.actor_email || 'web', payload.body || '', row.created_at, row.created_at).run(); n++;
+    } else if (row.op === 'create_task' && payload.temp_id) {
+      var proj = await db.prepare('SELECT id FROM projects WHERE slug = ?').bind(payload.project || '').first();
+      var tg = parseTags(payload.tags);
+      if (proj) {
+        await db.prepare('INSERT OR IGNORE INTO cards (id, project_id, key, title, description, status, stage, tags_json, prioridade, atrasado, url, human, pending, created_at, updated_at, deleted_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,NULL)')
+          .bind(payload.temp_id, proj.id, (payload.project || 'pre-vendas') + '#' + payload.temp_id, payload.title || '', payload.description || '', payload.status || 'todo',
+            stageFromTags(tg), JSON.stringify(tg), prioridadeFromTags(tg), isAtrasadoStatus(payload.status || 'todo', payload.description || '') ? 1 : 0, payload.url || '', payload.human ? 1 : 0, row.created_at, row.created_at).run();
+        n++;
+      }
+    }
+  }
+  return n;
+}
+
+/* v3: diferença legível entre duas versões do card, para o histórico (quem mudou o quê e quando). */
+function camposRotulados(desc) {
+  var out = {};
+  String(desc || '').split('\n').forEach(function (l) {
+    var m = l.match(/^\s*\*\*([^*\n]{2,60}?):\*\*\s*(.*)$/); if (m && m[2].trim()) out[m[1].trim()] = limpaMd(m[2]);
+  });
+  var v = valoresDaDescricao(desc); ['tcv', 'mrc', 'otc'].forEach(function (k) { if (v[k] != null) out[k.toUpperCase()] = 'R$ ' + v[k]; });
+  return out;
+}
+function diffCard(a, b) {
+  a = a || {}; b = b || {};
+  var out = [], ca = camposRotulados(a.description), cb = camposRotulados(b.description);
+  [['title', 'Título'], ['status', 'Status'], ['stage', 'Etapa'], ['solution', 'Solução']].forEach(function (k) {
+    if ((a[k[0]] || '') !== (b[k[0]] || '')) out.push({ campo: k[1], antes: a[k[0]] || '', depois: b[k[0]] || '' });
+  });
+  Object.keys(Object.assign({}, ca, cb)).forEach(function (k) {
+    if (k === 'Solução / Escopo' && out.some(function (x) { return x.campo === 'Solução'; })) return;
+    if ((ca[k] || '') !== (cb[k] || '')) out.push({ campo: k, antes: (ca[k] || '').slice(0, 300), depois: (cb[k] || '').slice(0, 300) });
+  });
+  return out;
+}
+async function auditCard(env, id) {
+  var r = await dataDB(env).prepare("SELECT a.id, a.at, a.actor_email, u.nome, a.action, a.before_json, a.after_json FROM audit_log a LEFT JOIN presales_users u ON u.email = a.actor_email WHERE a.entity = 'card' AND a.entity_id = ? ORDER BY a.id DESC LIMIT 30").bind(String(id)).all();
+  var cmds = await dataDB(env).prepare("SELECT id, status, created_at, applied_at, result_json FROM pending_commands WHERE entity = 'card' AND entity_id = ? ORDER BY id DESC LIMIT 30").bind(String(id)).all();
+  return {
+    events: (r.results || []).map(function (e) {
+      var a = null, b = null; try { a = JSON.parse(e.before_json || 'null'); } catch (x) {} try { b = JSON.parse(e.after_json || 'null'); } catch (x) {}
+      return { id: e.id, at: e.at, by: e.nome || e.actor_email || 'desconhecido', action: e.action, changes: e.action === 'update' ? diffCard(a, b) : [] };
+    }),
+    commands: (cmds.results || []).map(function (c) { var res = null; try { res = JSON.parse(c.result_json || 'null'); } catch (x) {} return { id: c.id, status: c.status, created_at: c.created_at, applied_at: c.applied_at, error: res && res.ok === false ? String(res.error || 'falhou') : null }; })
+  };
+}
+
+async function createCardOnline(env, s, b, req) {
+  var title = String(b.title || '').trim(); if (!title) return json({ erro: 'title obrigatório', error: 'title' }, 400);
+  var proj = await dataDB(env).prepare('SELECT id, slug FROM projects WHERE deleted_at IS NULL ORDER BY id LIMIT 1').first();
+  if (!proj) return json({ erro: 'Sem projeto no espelho. Aguarde sync do Mac.', error: 'no_project' }, 409);
+  var tags = parseTags(b.tags);
+  if (b.stage) { tags = tags.filter(function (t) { return t.indexOf('stage:') !== 0; }); tags.push('stage:' + b.stage); }
+  if (b.solution && b.solution !== 'A definir') { tags = tags.filter(function (t) { return t.indexOf('solucao:') !== 0; }); tags.push('solucao:' + b.solution); }
+  var status = b.status || 'todo';
+  var payload = { title: title, description: b.description || '', status: status, tags: tags.join(','), url: b.url || '', human: !!b.human, project: proj.slug };
+  var cmdId = await enqueue(env, s, 'create_task', 'card', null, payload);
+  var max = await dataDB(env).prepare('SELECT COALESCE(MAX(id),0) AS m FROM cards').first();
+  var id = (max.m || 0) + 100000 + (cmdId || 1);
+  payload.temp_id = id; // v3: permite reaplicar o card novo no espelho até o Mac criar
+  await dataDB(env).prepare('UPDATE pending_commands SET payload_json = ? WHERE id = ?').bind(JSON.stringify(payload), cmdId).run();
+  var now = iso();
+  var key = proj.slug + '#' + id;
+  await dataDB(env).prepare('INSERT INTO cards (id, project_id, key, title, description, status, stage, tags_json, prioridade, atrasado, url, human, pending, created_at, updated_at, deleted_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,NULL)')
+    .bind(id, proj.id, key, title, b.description || '', status, stageFromTags(tags), JSON.stringify(tags), prioridadeFromTags(tags), isAtrasadoStatus(status, b.description || '') ? 1 : 0, b.url || '', b.human ? 1 : 0, now, now).run();
+  await audit(env, s, 'create', 'card', id, null, { title: title, pending_command_id: cmdId }, req);
+  var st = await syncStatus(env);
+  var card = await getCard(env, id);
+  return json(Object.assign({ ok: true, pending_command_id: cmdId, mac_online: st.mac_online }, card));
+}
+
+async function patchCardOnline(env, s, id, b, req) {
+  var before = await getCard(env, id);
+  var target = await resolveMacTarget(env, id);
+  if ((!before || before.deleted_at) && target.mapped) before = await getCard(env, target.id);
+  if (!before || before.deleted_at) return json({ erro: 'Não encontrado', error: 'not_found' }, 404);
+  // v3 (precisa OK): conflito simples. O front manda o hash da descrição em que baseou a edição.
+  var baseHash = await sha256(before.description || '');
+  if (b.expect_description_sha256 && !iguais(String(b.expect_description_sha256), baseHash)) return json(Object.assign({ erro: 'O card mudou desde a sua leitura.', error: 'conflict' }, { current: before }), 409);
+  var tags = b.tags != null ? parseTags(b.tags) : (before.tags || []).slice();
+  if (b.stage != null) { tags = tags.filter(function (t) { return t.indexOf('stage:') !== 0; }); if (b.stage) tags.push('stage:' + b.stage); }
+  if (b.solution != null) { tags = tags.filter(function (t) { return t.indexOf('solucao:') !== 0; }); if (b.solution && b.solution !== 'A definir') tags.push('solucao:' + b.solution); }
+  var payload = { id: target.key || before.key || ('pre-vendas#' + target.id), base_description_sha256: baseHash };
+  if (target.mapped) payload.temp_id = target.temp_id;
+  if (b.title != null) payload.title = String(b.title);
+  if (b.description != null) payload.description = String(b.description);
+  if (b.status != null) payload.status = String(b.status);
+  if (b.url != null) payload.url = String(b.url);
+  if (b.human != null) payload.human = !!b.human;
+  if (b.tags != null || b.stage != null || b.solution != null) payload.tags = tags.join(',');
+  var cmdId = await enqueue(env, s, 'update_task', 'card', target.id, payload);
+  var now = iso();
+  await dataDB(env).prepare('UPDATE cards SET title = ?, description = ?, status = ?, stage = ?, tags_json = ?, prioridade = ?, atrasado = ?, url = ?, human = ?, pending = 1, updated_at = ? WHERE id = ?')
+    .bind(b.title != null ? String(b.title) : before.title,
+      b.description != null ? String(b.description) : before.description,
+      b.status != null ? String(b.status) : before.status,
+      stageFromTags(tags), JSON.stringify(tags), prioridadeFromTags(tags), isAtrasadoStatus(payload.status != null ? payload.status : before.status, payload.description != null ? payload.description : before.description) ? 1 : 0,
+      b.url != null ? String(b.url) : before.url, b.human != null ? (b.human ? 1 : 0) : (before.human ? 1 : 0),
+      now, before.id).run();
+  await audit(env, s, 'update', 'card', before.id, before, await getCard(env, before.id), req);
+  var st = await syncStatus(env);
+  return json(Object.assign({ ok: true, pending_command_id: cmdId, mac_online: st.mac_online, resolved_id: target.id }, await getCard(env, before.id)));
+}
+
+async function deleteCardOnline(env, s, id, req) {
+  var before = await getCard(env, id);
+  var target = await resolveMacTarget(env, id);
+  if ((!before || before.deleted_at) && target.mapped) before = await getCard(env, target.id);
+  if (!before || before.deleted_at) return json({ erro: 'Não encontrado' }, 404);
+  // Guarda anti-colisão: Mac só apaga se título/hash baterem com o card que a nuvem viu.
+  // Se o id-map apontar para o id errado, o título não casa e o agente recusa.
+  var payload = {
+    id: target.key || before.key || ('pre-vendas#' + target.id),
+    expected_title: before.title || '',
+    expected_description_sha256: await sha256(before.description || '')
+  };
+  if (target.mapped) payload.temp_id = target.temp_id;
+  var cmdId = await enqueue(env, s, 'delete_task', 'card', target.id, payload);
+  var now = iso();
+  await dataDB(env).prepare('UPDATE cards SET deleted_at = ?, pending = 1, updated_at = ? WHERE id = ?').bind(now, now, before.id).run();
+  if (target.mapped && target.id !== before.id) {
+    await dataDB(env).prepare('UPDATE cards SET deleted_at = ?, pending = 1, updated_at = ? WHERE id = ?').bind(now, now, target.id).run();
+  }
+  await audit(env, s, 'delete', 'card', before.id, before, null, req);
+  var st = await syncStatus(env);
+  return json({ ok: true, pending_command_id: cmdId, mac_online: st.mac_online, resolved_id: target.id, mapped_from: target.mapped ? target.temp_id : null });
+}
+
+async function addCommentOnline(env, s, cardId, b, req) {
+  var card = await getCard(env, cardId); if (!card || card.deleted_at) return json({ erro: 'Card não encontrado' }, 404);
+  var body = String(b.body || '').trim(); if (!body) return json({ erro: 'body obrigatório' }, 400);
+  var author = String(b.author || s.nome || s.email || 'web').slice(0, 80);
+  var payload = { id: card.key || ('pre-vendas#' + cardId), body: body, author: author };
+  var cmdId = await enqueue(env, s, 'add_comment', 'comment', cardId, payload);
+  var max = await dataDB(env).prepare('SELECT COALESCE(MAX(id),0) AS m FROM comments').first();
+  var id = (max.m || 0) + 100000 + (cmdId || 1);
+  var now = iso();
+  await dataDB(env).prepare('INSERT INTO comments (id, card_id, author, body, pending, created_at, updated_at, deleted_at) VALUES (?,?,?,?,1,?,?,NULL)')
+    .bind(id, cardId, author, body, now, now).run();
+  await audit(env, s, 'create', 'comment', id, null, { card_id: cardId, body: body }, req);
+  var st = await syncStatus(env);
+  return json({ ok: true, id: id, card_id: cardId, author: author, body: body, pending: true, created_at: now, pending_command_id: cmdId, mac_online: st.mac_online });
+}
+
+async function adminUsers(env, s, req, method, id, b) {
+  if (!isAdmin(s)) return json({ erro: 'Somente admin.', error: 'forbidden' }, 403);
+  if (method === 'GET') {
+    var r = await dataDB(env).prepare('SELECT id, email, nome, papel, ativo, senha IS NOT NULL AS senha_local, criado_em FROM presales_users ORDER BY id').all();
+    var n = await dataDB(env).prepare('SELECT COUNT(*) AS n FROM presales_users WHERE ativo = 1').first();
+    return json({ users: r.results || [], active: (n && n.n) || 0, max: MAX_USERS });
+  }
+  if (method === 'POST') {
+    if (!mesmaOrigem(req) || req.headers.get('X-MCO') !== '1') return json({ erro: 'Origem não permitida.' }, 403);
+    var email = String(b.email || '').trim().toLowerCase();
+    var nome = String(b.nome || email.split('@')[0] || 'User').slice(0, 80);
+    if (!email || email.indexOf('@') < 0) return json({ erro: 'E-mail inválido.' }, 400);
+    if (email === ADMIN_EMAIL) return json({ erro: 'Admin já existe.' }, 400);
+    var n = await dataDB(env).prepare('SELECT COUNT(*) AS n FROM presales_users WHERE ativo = 1').first();
+    if ((n && n.n) >= MAX_USERS) return json({ erro: 'Máximo de ' + MAX_USERS + ' acessos.', error: 'max_users' }, 400);
+    var exists = await dataDB(env).prepare('SELECT id, ativo FROM presales_users WHERE email = ?').bind(email).first();
+    var t = agora();
+    var localHash = null;
+    if (b.senha) localHash = await criarHash(String(b.senha), env);
+    if (exists) {
+      await dataDB(env).prepare('UPDATE presales_users SET nome = ?, papel = ?, ativo = 1, senha = COALESCE(?, senha), atualizado_em = ? WHERE id = ?')
+        .bind(nome, 'viewer', localHash, t, exists.id).run();
+      await audit(env, s, 'reactivate', 'user', exists.id, exists, { email: email }, req);
+      return json({ ok: true, user: await dataDB(env).prepare('SELECT id, email, nome, papel, ativo FROM presales_users WHERE id = ?').bind(exists.id).first() });
+    }
+    var ins = await dataDB(env).prepare('INSERT INTO presales_users (email, nome, papel, ativo, senha, criado_em, atualizado_em) VALUES (?,?,?,?,?,?,?)')
+      .bind(email, nome, 'viewer', 1, localHash, t, t).run();
+    var uid = ins.meta && ins.meta.last_row_id;
+    await audit(env, s, 'create', 'user', uid, null, { email: email, papel: 'viewer' }, req);
+    return json({ ok: true, user: { id: uid, email: email, nome: nome, papel: 'viewer', ativo: 1 } });
+  }
+  if (method === 'DELETE') {
+    if (!mesmaOrigem(req) || req.headers.get('X-MCO') !== '1') return json({ erro: 'Origem não permitida.' }, 403);
+    var u = await dataDB(env).prepare('SELECT * FROM presales_users WHERE id = ?').bind(id).first();
+    if (!u) return json({ erro: 'Não encontrado' }, 404);
+    if (u.email === ADMIN_EMAIL) return json({ erro: 'Não é possível remover o admin.' }, 400);
+    await dataDB(env).prepare('UPDATE presales_users SET ativo = 0, atualizado_em = ? WHERE id = ?').bind(agora(), id).run();
+    await dataDB(env).prepare('DELETE FROM presales_sessoes WHERE usuario_id = ?').bind(id).run();
+    await audit(env, s, 'deactivate', 'user', id, u, null, req);
+    return json({ ok: true });
+  }
+  return json({ erro: 'Método' }, 405);
+}
+
+var PG_LOGIN = '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Entrar · Pré-vendas</title><style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0A0A0A;color:#fff;font-family:system-ui,sans-serif}main{width:100%;max-width:24rem;background:#1A1A1A;border-radius:14px;padding:1.5rem;border-top:4px solid #E20074}label{display:block;font-size:.75rem;margin:.7rem 0 .25rem;color:#bbb}input{width:100%;min-height:2.8rem;border-radius:8px;border:2px solid #333;background:#222;color:#fff;padding:.4rem .7rem;box-sizing:border-box}button{width:100%;min-height:2.9rem;margin-top:1rem;border:0;border-radius:8px;background:#E20074;color:#fff;font-weight:700;cursor:pointer}.erro{color:#ff6b5e;min-height:1.2rem;margin-top:.6rem;font-size:.85rem}p{color:#999;font-size:.85rem}</style></head><body><main><h1>Pré-vendas</h1><p>Acesso allowlist (máx. 4). Admin: Guilherme. Senha = Casa em Ordem (se o e-mail estiver liberado).</p><form id="f"><label>E-mail</label><input name="email" type="email" required autocomplete="username"><label>Senha</label><input name="senha" type="password" required autocomplete="current-password"><div class="erro" id="e"></div><button type="submit">Entrar</button></form></main><script src="/portal/login.js"></script></body></html>';
+var JS_LOGIN = "(function(){var f=document.getElementById('f'),e=document.getElementById('e');f.addEventListener('submit',function(ev){ev.preventDefault();e.textContent='';fetch('/api/login',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-MCO':'1'},body:JSON.stringify({email:f.email.value,senha:f.senha.value})}).then(function(r){return r.json().then(function(j){return{r:r,j:j}})}).then(function(x){if(x.r.ok)location.replace('/');else e.textContent=x.j.erro||'Falha'}).catch(function(){e.textContent='Sem conexão'})})})();";
+var PG_ADMIN = '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin · Pré-vendas</title><style>body{margin:0;background:#0A0A0A;color:#fff;font-family:system-ui,sans-serif;padding:1.2rem}a{color:#ff4fa3}table{width:100%;border-collapse:collapse;margin:1rem 0}th,td{border-bottom:1px solid #333;padding:.5rem;text-align:left}input,button{min-height:2.4rem;border-radius:8px;border:1px solid #444;background:#1a1a1a;color:#fff;padding:.3rem .6rem}button{background:#E20074;border:0;font-weight:700;cursor:pointer}.muted{color:#999}</style></head><body><p><a href="/">← Dashboard</a></p><h1>Acessos (máx. 4)</h1><p class="muted" id="info">…</p><table><thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Ativo</th><th></th></tr></thead><tbody id="tb"></tbody></table><h2>Adicionar</h2><form id="f"><input name="nome" placeholder="Nome" required> <input name="email" type="email" placeholder="E-mail" required> <input name="senha" type="password" placeholder="Senha local (opcional se já tiver Casa)"> <button type="submit">Adicionar viewer</button></form><p id="msg" class="muted"></p><script src="/portal/admin.js"></script></body></html>';
+var JS_ADMIN = "(function(){function j(u,o){o=o||{};o.credentials='same-origin';o.headers=Object.assign({'Accept':'application/json','Content-Type':'application/json','X-MCO':'1'},o.headers||{});return fetch(u,o).then(function(r){if(r.status===401){location.replace('/login');throw 0}return r.json().then(function(b){if(!r.ok)throw new Error(b.erro||b.error||r.status);return b})})}function load(){Promise.all([j('/api/me'),j('/api/admin/users')]).then(function(x){var me=x[0],d=x[1];if(me.papel!=='admin'){location.replace('/');return}document.getElementById('info').textContent=d.active+' / '+d.max+' ativos';var tb=document.getElementById('tb');tb.innerHTML='';(d.users||[]).forEach(function(u){var tr=document.createElement('tr');tr.innerHTML='<td>'+u.nome+'</td><td>'+u.email+'</td><td>'+u.papel+'</td><td>'+(u.ativo?'sim':'não')+'</td><td></td>';if(u.email!=='admin@exemplo.com'&&u.ativo){var b=document.createElement('button');b.textContent='Remover';b.onclick=function(){j('/api/admin/users/'+u.id,{method:'DELETE'}).then(load).catch(function(e){document.getElementById('msg').textContent=e.message})};tr.lastChild.appendChild(b)}tb.appendChild(tr)})}).catch(function(e){document.getElementById('msg').textContent=String(e&&e.message||e)})}document.getElementById('f').onsubmit=function(ev){ev.preventDefault();var f=ev.target;var body={nome:f.nome.value,email:f.email.value};if(f.senha.value)body.senha=f.senha.value;j('/api/admin/users',{method:'POST',body:JSON.stringify(body)}).then(function(){f.reset();load()}).catch(function(e){document.getElementById('msg').textContent=e.message})};load()})();";
+
+export default {
+  async fetch(req, env) {
+    try {
+      await ensureSchema(env);
+      var url = new URL(req.url), p = url.pathname, method = req.method;
+      if (url.protocol !== 'https:' && url.hostname !== 'localhost' && url.hostname !== '127.0.0.1') return redirecionar('https://' + url.host + p + url.search, 301);
+
+      if (p === '/api/saude' || p === '/api/health') return json({ ok: true, servico: 'presales-kanzo', version: 3, source: 'd1', features: ['expect_sha256', 'audit', 'keep_pending'] });
+
+      if (p.indexOf('/sync/') === 0) {
+        if (!syncOk(req, env)) return json({ erro: 'Token de sync inválido' }, 403);
+        if ((p === '/sync/push' || p === '/sync/snapshot') && method === 'POST') {
+          var body = await corpoJson(req); if (!body) return json({ erro: 'JSON inválido' }, 400);
+          if (p === '/sync/snapshot') body.snapshot = true;
+          return json(await replaceMirrorFromPush(env, body));
+        }
+        if (p === '/sync/pull' && method === 'GET') {
+          await metaSet(env, 'last_pull_at', iso());
+          var cmds = await dataDB(env).prepare("SELECT id, created_at, op, entity, entity_id, payload_json, actor_email FROM pending_commands WHERE status = 'pending' ORDER BY id LIMIT 50").all();
+          var commands = [];
+          for (var ci = 0; ci < (cmds.results || []).length; ci++) {
+            var c = cmds.results[ci];
+            var payload = {}; try { payload = JSON.parse(c.payload_json || '{}'); } catch (e) {}
+            var entityId = c.entity_id;
+            if (payload.id) {
+              var tip = String(payload.id).split('#').pop();
+              var mp = await lookupCardIdMap(env, tip);
+              if (mp) { payload.id = mp.real_key; entityId = String(mp.real_id); }
+            } else if (entityId) {
+              var mp2 = await lookupCardIdMap(env, entityId);
+              if (mp2) { entityId = String(mp2.real_id); payload.id = mp2.real_key; }
+            }
+            commands.push({ id: c.id, created_at: c.created_at, op: c.op, entity: c.entity, entity_id: entityId, payload: payload, actor_email: c.actor_email });
+          }
+          return json({ commands: commands });
+        }
+        if (p === '/sync/ack' && method === 'POST') {
+          var ack = await corpoJson(req); if (!ack) return json({ erro: 'JSON inválido' }, 400);
+          var ids = ack.ids || [], results = ack.results || [];
+          var mapped = 0;
+          for (var i = 0; i < ids.length; i++) {
+            var res = results[i] || {};
+            var cmdRow = await dataDB(env).prepare('SELECT id, op, payload_json FROM pending_commands WHERE id = ?').bind(ids[i]).first();
+            var payloadAck = {}; try { payloadAck = JSON.parse((cmdRow && cmdRow.payload_json) || '{}'); } catch (e) {}
+            await dataDB(env).prepare("UPDATE pending_commands SET status = ?, result_json = ?, applied_at = ? WHERE id = ? AND status = 'pending'")
+              .bind(res.ok === false ? 'failed' : 'applied', JSON.stringify(res), iso(), ids[i]).run();
+            if (res.ok !== false && ((cmdRow && cmdRow.op === 'create_task') || res.op === 'create_task')) {
+              var parsed = parseRealFromAck(res, payloadAck);
+              if (parsed.tempId && parsed.realId && parsed.realKey) {
+                await saveCardIdMap(env, parsed.tempId, parsed.realId, parsed.realKey);
+                await rewritePendingForTempId(env, parsed.tempId, parsed.realId, parsed.realKey);
+                mapped++;
+              }
+            }
+          }
+          await metaSet(env, 'last_pull_at', iso());
+          return json({ ok: true, acked: ids.length, id_maps: mapped });
+        }
+        return json({ erro: 'Rota sync desconhecida' }, 404);
+      }
+
+      var s = await sessaoDe(req, env);
+      if (p === '/login') return s ? redirecionar('/') : html(PG_LOGIN);
+      if (p === '/portal/login.js') return js(JS_LOGIN);
+      if (p === '/portal/admin.js') return js(JS_ADMIN);
+      if (p === '/api/login' && method === 'POST') return await apiLogin(req, env);
+      if (p === '/api/logout' && method === 'POST') return await apiLogout(req, env, s);
+
+      if (!s) {
+        var nav = req.headers.get('Sec-Fetch-Mode') === 'navigate' || /text\/html/.test(req.headers.get('Accept') || '');
+        if (nav && method === 'GET' && p.indexOf('/api/') !== 0) return redirecionar('/login');
+        return json({ erro: 'Entre para continuar.', error: 'auth' }, 401);
+      }
+
+      if (p === '/admin') return isAdmin(s) ? html(PG_ADMIN) : redirecionar('/');
+      if (p === '/api/me') return json({ id: s.id, nome: s.nome, email: s.email, papel: s.papel, can_write: isAdmin(s) });
+      if (p === '/api/sync/status') return json(await syncStatus(env));
+      if (p === '/api/summary' && method === 'GET') return json(await getSummary(env));
+      if (p === '/api/stages' && method === 'GET') {
+        var counts = await dataDB(env).prepare("SELECT stage, COUNT(*) AS n, SUM(CASE WHEN status != 'done' THEN 1 ELSE 0 END) AS open FROM cards WHERE deleted_at IS NULL AND stage IS NOT NULL GROUP BY stage").all();
+        var map = {}; (counts.results || []).forEach(function (r) { map[r.stage] = r; });
+        var stages = STAGE_ORDER.map(function (id, order) {
+          var r = map[id] || { n: 0, open: 0 };
+          return { key: id, id: id, label: STAGE_LABEL[id] || id, order: order, count: r.n || 0, open: r.open || 0 };
+        });
+        Object.keys(map).forEach(function (id) {
+          if (STAGE_ORDER.indexOf(id) < 0) stages.push({ key: id, id: id, label: id, order: 99, count: map[id].n, open: map[id].open });
+        });
+        return json({ stages: stages });
+      }
+
+      if (p === '/api/admin/users' || /^\/api\/admin\/users\/\d+$/.test(p)) {
+        var mid = p.match(/^\/api\/admin\/users\/(\d+)$/);
+        var bodyA = method === 'GET' ? null : (await corpoJson(req) || {});
+        return await adminUsers(env, s, req, method, mid ? parseInt(mid[1], 10) : null, bodyA);
+      }
+
+      if (p === '/api/cards' && method === 'GET') return json(await listCards(env, url));
+      if (p === '/api/cards' && method === 'POST') {
+        var gate = requireWrite(req, s); if (gate) return gate;
+        var bc = await corpoJson(req); if (!bc) return json({ erro: 'JSON inválido' }, 400);
+        return await createCardOnline(env, s, bc, req);
+      }
+      var mCard = p.match(/^\/api\/cards\/(\d+)$/);
+      if (mCard) {
+        var cid = parseInt(mCard[1], 10);
+        if (method === 'GET') { var card = await getCard(env, cid); return card ? json(card) : json({ erro: 'Não encontrado' }, 404); }
+        var g2 = requireWrite(req, s); if (g2) return g2;
+        if (method === 'PATCH') { var bp = await corpoJson(req); if (!bp) return json({ erro: 'JSON inválido' }, 400); return await patchCardOnline(env, s, cid, bp, req); }
+        if (method === 'DELETE') return await deleteCardOnline(env, s, cid, req);
+      }
+      var mAud = p.match(/^\/api\/cards\/(\d+)\/audit$/);
+      if (mAud && method === 'GET') return json(await auditCard(env, parseInt(mAud[1], 10)));
+      var mCom = p.match(/^\/api\/cards\/(\d+)\/comments$/);
+      if (mCom && method === 'POST') {
+        var g3 = requireWrite(req, s); if (g3) return g3;
+        var bcom = await corpoJson(req); if (!bcom) return json({ erro: 'JSON inválido' }, 400);
+        return await addCommentOnline(env, s, parseInt(mCom[1], 10), bcom, req);
+      }
+      // products/solutions stay admin-write, anyone-read
+      if (p === '/api/products' && method === 'GET') {
+        var pr = await dataDB(env).prepare('SELECT * FROM products WHERE deleted_at IS NULL AND active = 1 ORDER BY name').all();
+        return json({ products: pr.results || [] });
+      }
+      if (p === '/api/solutions' && method === 'GET') {
+        var so = await dataDB(env).prepare('SELECT * FROM solutions WHERE deleted_at IS NULL AND active = 1 ORDER BY name').all();
+        return json({ solutions: so.results || [] });
+      }
+
+      if (method === 'GET' || method === 'HEAD') {
+        if (env.ASSETS && env.ASSETS.fetch) {
+          var a = await env.ASSETS.fetch(req);
+          if (a.status !== 404) {
+            var h = seguranca(new Headers(a.headers), 'ativo');
+            return new Response(a.body, { status: a.status, headers: h });
+          }
+        }
+        return json({ erro: 'Não encontrado' }, 404);
+      }
+      return json({ erro: 'Método não permitido' }, 405);
+    } catch (e) {
+      return json({ erro: 'Erro interno', detalhe: String(e && e.message || e) }, 500);
+    }
+  }
+};

@@ -1,0 +1,134 @@
+/* Remodelo 11/11/2026 — Plataforma - Controle Geral de Pré Venda.
+   Carteira primeiro (com Exige ação), card na ordem da decisão, tarefas do card, nome novo e celular de ponta a ponta.
+   Só tokens existentes (tokens.css): funciona no tema escuro e no claro. */
+
+/* ---------- nome: longo no desktop, curto no celular ---------- */
+.brand .mark{font-size:12px;letter-spacing:-.02em}
+.nome-curto{display:none}
+.so-mob-i{display:none}
+@media (max-width:640px){.so-mob-i{display:inline}}
+@media (max-width:900px){.nome-longo{display:none}.nome-curto{display:inline}}
+
+/* ---------- um menu só (Carteira, Resumo, Funil, Saúde, Qualidade): cada item mostra a sua seção ----------
+   A apresentação (body.apresentando) tem regras por id e continua mostrando os slides. Na impressão sai tudo. */
+body[data-visao] main>.sec{display:none}
+body[data-visao="carteira"] main>.sec[data-sec="carteira"],
+body[data-visao="resumo"] main>.sec[data-sec="resumo"],
+body[data-visao="funil"] main>.sec[data-sec="funil"],
+body[data-visao="saude"] main>.sec[data-sec="saude"],
+body[data-visao="qualidade"] main>.sec[data-sec="qualidade"]{display:block}
+body.pre-carga[data-visao] main>.sec.pos-carga{display:none}
+.secnav a[aria-current="page"]{color:var(--text);border-bottom-color:var(--brand)}
+@media print{body[data-visao] main>.sec{display:block!important}}
+
+/* ---------- Exige ação dentro da Carteira ---------- */
+.acao-panel{margin-bottom:var(--s4)}
+.u-bg-brand{background:var(--brand)!important}
+.arow.tarefa .flag{background:var(--brand)}
+.arow .a-n{margin-top:4px;font-size:var(--fs-12);color:var(--text-2);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.tag.tk-urg{background:var(--brand-bg);color:var(--brand)}
+.prow .p-tk{margin-top:4px;display:flex;gap:6px;flex-wrap:wrap}
+
+/* ---------- card (drawer) em blocos ---------- */
+.dblk{border:1px solid var(--line);border-radius:var(--r-m);background:var(--surface-2);padding:var(--s3);display:grid;gap:var(--s3);min-width:0}
+.dblk-h{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s2);flex-wrap:wrap}
+.dblk-h h3{margin:0;font-size:var(--fs-13);font-weight:700;letter-spacing:.01em}
+.dblk-h .meta,.blk .meta.warn{font-size:var(--fs-12);color:var(--text-3)}
+.blk .meta.warn{color:var(--warn)}
+.dblk .efs{margin:0}
+.efs.efs-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.dec-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s3)}
+.dec-i{display:grid;gap:4px;min-width:0}
+.dec-l{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3)}
+.dec-sel .sel{width:100%}
+.dec-v{font-size:var(--fs-14);overflow-wrap:anywhere}
+.dblk.foco{border-color:var(--accent-line);background:linear-gradient(180deg,var(--accent-bg),transparent 70%),var(--surface-2)}
+.sit-fb{grid-column:1/-1;border:1px dashed var(--warn);background:var(--warn-bg);border-radius:var(--r-s);padding:10px 12px;display:grid;gap:6px}
+.sit-fb b{font-size:var(--fs-12);color:var(--warn)}
+.sit-fb p{margin:0;font-size:var(--fs-13);color:var(--text);white-space:pre-line;overflow-wrap:anywhere}
+.sit-fb .hint{font-size:var(--fs-12);color:var(--text-3)}
+.d-val>div{padding-top:var(--s2)}
+.d-meta{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:var(--fs-12);color:var(--text-3)}
+
+/* ---------- tarefas ---------- */
+.tk-list,.tk-sug ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.tk-i{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:6px 8px;border-radius:var(--r-s);background:var(--surface);border:1px solid var(--line)}
+.tk-i.late{border-color:var(--brand)}
+.tk-i.done .tk-t{text-decoration:line-through;color:var(--text-3)}
+.tk-i.editing{grid-template-columns:1fr}
+.tk-chk{width:28px;height:28px;border-radius:7px;border:2px solid var(--line-2);background:transparent;display:grid;place-items:center;color:var(--surface);cursor:pointer;padding:0;position:relative}
+.tk-chk .ico{width:16px;height:16px;stroke-width:3}
+.tk-chk[aria-checked="true"],.tk-chk.ro:has(.ico){background:var(--accent);border-color:var(--accent)}
+.tk-chk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tk-chk.ro{cursor:default}
+.tk-c{min-width:0;display:grid;gap:4px}
+.tk-t{font-size:var(--fs-13);overflow-wrap:anywhere}
+.tk-m{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tk-q{font-size:11px;color:var(--text-3)}
+.tk-a{display:flex;gap:2px}
+.tk-ib{width:32px;padding:0}
+.tk-ib .ico{width:15px;height:15px}
+.tk-vazio{margin:0;font-size:var(--fs-13);color:var(--text-3)}
+.tk-sug{display:grid;gap:6px;border-top:1px dashed var(--line-2);padding-top:var(--s2)}
+.tk-sub{margin:0;font-size:var(--fs-12);font-weight:700;color:var(--text-2)}
+.tk-s{display:grid;gap:6px;padding:8px;border-radius:var(--r-s);border:1px dashed var(--line-2)}
+.tk-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tk-add,.tk-ed{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
+.tk-fl{display:grid;gap:4px;font-size:var(--fs-12);color:var(--text-3);min-width:0}
+.tk-grow{flex:1 1 220px}
+.tk-ed .tk-fl:not(.tk-dt){flex:1 1 220px}
+.tk-dt{flex:0 1 150px}
+.tk-fl .inp{width:100%}
+
+/* ---------- celular: navegação inferior, card em tela cheia, toque >= 44 px ---------- */
+@media (max-width:640px){
+  html,body{overflow-x:hidden}
+  .tabs{display:none}
+  .secnav{position:fixed!important;top:auto!important;left:0;right:0;bottom:0;z-index:40;border-top:1px solid var(--line);border-bottom:0;padding-bottom:env(safe-area-inset-bottom,0)}
+  .secnav ul{padding:0 max(4px,env(safe-area-inset-left,0)) 0 max(4px,env(safe-area-inset-right,0));gap:0;overflow:visible;justify-content:space-between}
+  .secnav li{flex:1 1 0;min-width:0}
+  .secnav a{height:58px;flex-direction:column;justify-content:center;gap:2px;padding:0 2px;font-size:11px;border-bottom:0;border-top:2px solid transparent;position:relative}
+  .secnav a.on,.secnav a[aria-current="page"]{border-top-color:var(--brand);border-bottom-color:transparent}
+  .secnav a .ico{width:20px;height:20px}
+  .secnav .nl{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+  .secnav .n{position:absolute;top:4px;left:calc(50% + 6px);font-size:10px;min-width:16px;height:16px}
+  .so-desk-i{display:none}
+  .wrap{padding-bottom:calc(84px + env(safe-area-inset-bottom,0))}
+  .foot{padding-bottom:calc(76px + env(safe-area-inset-bottom,0))}
+  .top-in{padding-left:max(12px,env(safe-area-inset-left,0));padding-right:max(12px,env(safe-area-inset-right,0))}
+  .top{padding-top:env(safe-area-inset-top,0)}
+  body.apresentando .secnav{display:none}
+
+  .drawer{width:100vw;border-left:0;box-shadow:none}
+  .drawer header{padding-top:calc(var(--s4) + env(safe-area-inset-top,0))}
+  .drawer .actions{position:sticky;bottom:0;background:var(--surface);padding-bottom:calc(var(--s3) + env(safe-area-inset-bottom,0));flex-wrap:wrap}
+  .drawer .actions .btn{flex:1 1 auto}
+  .drawer .actions .sp{display:none}
+  .drawer .body .efs,.efs.efs-3,.dec-g{grid-template-columns:1fr}
+  .tk-chk{width:44px;height:44px}
+  .tk-ib{width:44px}
+  .tk-i{padding:4px 6px 4px 4px;gap:8px}
+  .tk-dt{flex:1 1 100%}
+  .tk-add .btn,.tk-ed .btn,.tk-s .btn{flex:1 1 auto}
+  .toast{bottom:calc(72px + env(safe-area-inset-bottom,0))}
+  /* cabeçalho em duas linhas: marca + Novo; depois status e ações (sem espremer o nome) */
+  .top .actions{display:contents}
+  .top-in{flex-wrap:wrap;row-gap:6px}
+  .brand{order:0;flex:1 1 calc(100% - 120px)!important;min-width:0}
+  #btn-new{order:1;flex:none}
+  .status-pills{order:2;flex:1 1 90px!important;width:auto!important;min-width:0}
+  .top .actions>*:not(#btn-new){order:3;flex:none}
+  .acao-panel .panel-h{flex-wrap:wrap;row-gap:4px}
+  .acao-panel .panel-h h3{white-space:nowrap;flex:none}
+  .acao-panel .panel-h>:not(h3){flex:1 1 100%;text-align:left}
+  .lm{min-width:44px;justify-content:center}
+  .drawer summary{min-height:44px;display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px}
+  .drawer .ef-v{min-height:44px}
+  .anel-l button.lg,button.lm{min-height:44px}
+}
+@media (max-width:380px){
+  .secnav a{font-size:10.5px}
+  .top .actions .btn{padding:0 6px}
+}
+@media print{.secnav{display:none!important}}
+.g-main.g-valor{grid-template-columns:1fr}

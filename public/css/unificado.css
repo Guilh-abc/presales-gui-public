@@ -1,0 +1,93 @@
+/* =====================================================================
+   Visual unificado 18/11/2026: repaginação clara (branch) + o melhor do visual
+   da produção de 16/11 (Manrope local, logo grande na barra lateral, lista da
+   Carteira em linhas com faixa colorida, busca com sugestões, ranking ordenável).
+   Só visual: nada aqui muda cálculo, regra, API, SQL ou dado. Carrega por último.
+   Cores só por token. prefers-reduced-motion = estado final. byGui
+   ===================================================================== */
+
+/* ---------- contraste AA no claro: texto pequeno também sobre o fundo e as manchas (≥ 4,5:1) ---------- */
+:root[data-tema="claro"]{--text-secondary:#4D5C6C;--text-tertiary:#566574}
+
+/* ---------- fonte: Manrope local (sem CDN); SF Pro/sistema só como reserva ---------- */
+@font-face{font-family:"Manrope";src:url(../fonts/manrope-var-latin.woff2) format("woff2");font-weight:200 800;font-style:normal;font-display:swap}
+:root{--font:"Manrope",-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,system-ui,sans-serif;--uni-brand-h:168px}
+body{font-family:var(--font);letter-spacing:-.011em;font-optical-sizing:auto}
+button,input,select,textarea{font-family:inherit}
+.sec-h h2,.panel-h h3,.ac-title,.kpi .k-v,.hero .h-num{letter-spacing:-.028em}
+
+/* ---------- barra lateral: logo grande + nome ---------- */
+.brand .mark{width:64px;height:64px;border-radius:18px;box-shadow:0 8px 20px rgba(27,58,90,.22)}
+.brand-k{font-weight:750}
+@media (min-width:1280px){
+  .brand{flex-direction:column;align-items:flex-start;gap:12px}
+  .brand-k{font-size:19px;letter-spacing:-.025em}
+  .brand-t b{font-size:12.5px;font-weight:600;color:var(--text-secondary)}
+  .brand-t b .nome-curto{display:inline!important}
+  .secnav ul{padding-top:var(--uni-brand-h)}
+  .secnav ul::after{top:calc(var(--uni-brand-h) + 26px)}
+}
+@media (min-width:1024px) and (max-width:1279px){
+  .brand .mark{width:52px;height:52px;border-radius:15px}
+  .secnav ul{padding-top:100px}
+  .secnav ul::after{top:100px}
+}
+@media (max-width:640px){
+  .brand .mark{width:44px;height:44px;border-radius:13px;box-shadow:0 4px 12px rgba(27,58,90,.2)}
+}
+
+/* ---------- Carteira: lista em linhas com faixa colorida (abaixo dos cartões Exige ação) ---------- */
+.ptable{background:transparent;box-shadow:none;border:0!important;border-radius:0;overflow:visible}
+:root:not([data-tema="claro"]) .ptable{border:0}
+.prow{--rw-c:var(--text-tertiary)}
+.prow:not(.head){position:relative;width:100%;text-align:left;margin:0 0 10px;padding:15px 18px 15px 26px;border:0;border-radius:var(--cg-radius-s);
+  background:var(--surface-card);box-shadow:var(--shadow-sm);transition:transform .22s var(--cg-out),box-shadow .22s var(--cg-out)}
+:root:not([data-tema="claro"]) .prow:not(.head){border:1px solid var(--border)}
+.prow:not(.head):last-child{margin-bottom:0}
+.prow:not(.head)::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:4px;border-radius:0 4px 4px 0;background:var(--rw-c)}
+.prow:not(.head):hover{transform:translateY(-1px);box-shadow:var(--cg-shadow);background:var(--surface-card)}
+/* cor da faixa = mesma lógica dos cartões Exige ação: vencido vermelho, atenção âmbar, andamento azul, concluído verde */
+.prow:has(.tag.acc){--rw-c:var(--accent)}
+.prow:has(.tag.ok){--rw-c:var(--success)}
+.prow:has(.tag.warn){--rw-c:var(--cg-warn-forte)}
+.prow:has(.p-d.bad),.prow:has(.tag.bad){--rw-c:var(--danger)}
+.prow.head{padding:4px 18px 8px 26px;border-bottom:0;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-tertiary)}
+.prow .p-t{font-size:15px;letter-spacing:-.018em}
+.prow .p-d.bad{color:var(--danger)}
+@media (max-width:640px){
+  .prow:not(.head){padding:14px 14px 14px 22px;margin-bottom:10px}
+}
+
+/* ---------- busca ---------- */
+.search .inp{border-radius:14px}
+
+/* ---------- Ranking por TCV: títulos ordenáveis ---------- */
+.rk th{padding:8px 10px}
+.rk .sort-btn{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:2px 6px;margin:0 -6px;border:0;border-radius:8px;background:transparent;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer}
+.rk th.num .sort-btn{flex-direction:row-reverse}
+.rk .sort-btn::after{content:"";width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid currentColor;opacity:0;transform:translateY(0);transition:opacity .18s var(--cg-out),transform .18s var(--cg-out)}
+.rk .sort-btn:hover{color:var(--accent);background:var(--accent-soft)}
+.rk .sort-btn:hover::after{opacity:.45}
+.rk th[aria-sort="ascending"] .sort-btn,.rk th[aria-sort="descending"] .sort-btn{color:var(--accent)}
+.rk th[aria-sort] .sort-btn::after{opacity:0}
+.rk th[aria-sort="ascending"] .sort-btn::after{opacity:1;border-top:0;border-bottom:5px solid currentColor}
+.rk th[aria-sort="descending"] .sort-btn::after{opacity:1}
+.rk td{padding:8px 10px}
+.rk tbody tr{transition:background-color .18s var(--cg-out)}
+.rk tbody tr:hover{background:var(--surface-hover)}
+
+/* ---------- foco visível (anel único, vale para claro e escuro) ---------- */
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.prow:focus-visible,.acard:focus-visible,.rk .sort-btn:focus-visible{outline-offset:1px}
+
+/* ---------- movimento: linhas da lista entram em sequência; reduzido = estado final ---------- */
+@media (prefers-reduced-motion:no-preference){
+  .prow:not(.head){animation:uni-linha .34s var(--cg-out) both}
+  .prow:nth-child(2){animation-delay:30ms}.prow:nth-child(3){animation-delay:60ms}.prow:nth-child(4){animation-delay:90ms}
+  .prow:nth-child(5){animation-delay:120ms}.prow:nth-child(6){animation-delay:150ms}.prow:nth-child(7){animation-delay:180ms}
+  .prow:nth-child(n+8){animation-delay:210ms}
+}
+@keyframes uni-linha{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  .prow:not(.head),.prow:not(.head):hover,.rk .sort-btn::after{animation:none;transition:none;transform:none}
+}

@@ -1,0 +1,14 @@
+name = "presales-kanzo"
+main = "main.js"
+compatibility_date = "2025-09-01"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DATA"
+database_name = "presales-kanzo"
+database_id = "00000000-0000-0000-0000-000000000000"  # troque pelo id do seu D1
+
+[[d1_databases]]
+binding = "AUTH_DB"
+database_name = "minha-casa-acesso"
+database_id = "11111111-1111-1111-1111-111111111111"  # troque pelo id do seu D1 de login

@@ -1,0 +1,19 @@
+/* Correção celular 12/11 — rolagem horizontal da página.
+   Causa: os rótulos .sr-only (position:absolute) dentro do quadro de colunas tinham o <body> como bloco de contenção,
+   escapavam do overflow-x:auto do .kboard e esticavam a página para ~1100 px; o celular então ampliava a viewport
+   de layout e o menu inferior fixo (left:0;right:0) ficava com 1100 px, mostrando só Carteira e Resumo. */
+.kboard,.kcol,.kcol-b,.rk-wrap,.cols-wrap,.tabs,.ft-tabs,.secnav ul,.tbl-wrap,.table-wrap{position:relative}
+html,body{max-width:100%;overflow-x:hidden}
+@supports (overflow:clip){html,body{overflow-x:clip}}
+@media (max-width:640px){
+  /* o quadro rola só dentro dele, com encaixe por coluna */
+  .kboard{overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scroll-padding-left:2px}
+  .kcol{flex:0 0 min(280px,84vw);scroll-snap-align:start}
+  /* menu inferior sempre na largura da tela, com os 5 itens */
+  .secnav{width:100%;max-width:100vw;box-sizing:border-box}
+  .secnav ul{width:100%;max-width:100%;box-sizing:border-box;overflow:hidden}
+  .secnav li{flex:1 1 0;min-width:0}
+  .secnav a{min-width:0;overflow:hidden}
+  .wrap,.foot,main,section,.sec,.sec-body,.panel{min-width:0;max-width:100%}
+  .foot{overflow-wrap:anywhere}
+}

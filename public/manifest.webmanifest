@@ -1,0 +1,29 @@
+{
+  "name": "Controle Geral · Registro rápido",
+  "short_name": "CG Rápido",
+  "description": "Registro rápido da Plataforma - Controle Geral de Pré Venda (só admin).",
+  "start_url": "/rapido.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#E6EDF3",
+  "theme_color": "#E6EDF3",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ]
+}

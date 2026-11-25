@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="pt-BR" data-tema="claro">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#E6EDF3" />
+<meta name="color-scheme" content="light dark" />
+<title>Plataforma - Controle Geral de Pré Venda</title>
+<meta name="application-name" content="Controle Geral" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Controle Geral" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="manifest" href="/app.webmanifest" crossorigin="use-credentials" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+<link rel="preload" href="fonts/manrope-var-latin.woff2" as="font" type="font/woff2" crossorigin />
+<script src="js/tema.js"></script>
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/styles.css" />
+<link rel="stylesheet" href="css/editor.css" />
+<link rel="stylesheet" href="css/kanban.css" />
+<link rel="stylesheet" href="css/lote8.css" />
+<link rel="stylesheet" href="css/remodelo.css" />
+<link rel="stylesheet" href="css/alertas.css" />
+<link rel="stylesheet" href="css/carteira-premium.css" />
+<link rel="stylesheet" href="css/redesign.css" />
+<link rel="stylesheet" href="css/mobile-fix.css" />
+<link rel="stylesheet" href="css/clara.css" />
+<link rel="stylesheet" href="css/unificado.css" />
+<link rel="stylesheet" href="css/docs.css" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
+<link rel="icon" href="/favicon-16.png" type="image/png" sizes="16x16" />
+<link rel="icon" href="/icone-presales-bygui.webp" type="image/webp" />
+</head>
+<body class="pre-carga">
+<a class="skip" href="#conteudo">Pular para o conteúdo</a>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"><img src="logo-mark-72.png" srcset="logo-mark-72.png 1x, logo-mark-144.png 2x" width="64" height="64" alt="" decoding="async" /></span>
+      <div class="brand-t"><span class="brand-k" aria-hidden="true">Pré-venda</span><b><span class="nome-longo">Plataforma - Controle Geral de Pré Venda</span><span class="nome-curto">Controle Geral</span></b><small id="meta-line">carregando dados…</small></div>
+    </div>
+    <div class="status-pills">
+      <span class="pill" id="selo" tabindex="0" data-tip="Carregando…"><span class="dot"></span><span class="t">carregando</span></span>
+      <button class="pill save" id="save-ind" type="button" hidden data-tip="Nenhuma alteração pendente."><span class="dot"></span><span class="t">Tudo salvo</span></button>
+    </div>
+    <div class="actions">
+      <button class="btn btn-ghost so-desk" id="btn-pres" type="button" aria-keyshortcuts="P" data-tip="Modo apresentação: esconde navegação, filtros e faixas para mostrar na reunião (tecla P; Esc sai)."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span class="lbl">Apresentar</span></button>
+      <button class="btn btn-ghost so-desk btn-tema" id="btn-tema" type="button" aria-label="Usar tema claro" aria-pressed="false"><svg class="ico i-sol" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.9" y1="4.9" x2="6.3" y2="6.3"/><line x1="17.7" y1="17.7" x2="19.1" y2="19.1"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.9" y1="19.1" x2="6.3" y2="17.7"/><line x1="17.7" y1="6.3" x2="19.1" y2="4.9"/></svg><svg class="ico i-lua" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+      <button class="btn btn-ghost" id="btn-refresh" type="button" aria-label="Atualizar" data-tip="Buscar de novo os dados da API agora. A tela também atualiza sozinha a cada 60 s, sem aviso.">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg><span class="lbl">Atualizar</span>
+      </button>
+      <a class="btn btn-ghost" id="btn-admin" href="/admin" hidden aria-label="Admin" data-tip="Usuários e permissões (até 4 acessos)."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="lbl">Admin</span></a>
+      <button class="btn btn-ghost" id="btn-logout" type="button" aria-label="Sair"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span class="lbl">Sair</span></button>
+      <button class="btn btn-ghost needs-live" id="btn-ft" type="button" hidden data-tip="Força-tarefa de qualidade: preencha o que falta nos cards, com atalhos (tecla F)."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span class="lbl">Força-tarefa</span><span class="n" id="btn-ft-n" hidden></span></button>
+      <button class="btn btn-primary needs-live" id="btn-new" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span class="lbl">Projeto</span><span class="lbl-curto">Novo</span></button>
+    </div>
+  </div>
+</header>
+<nav class="secnav" id="menu" aria-label="Menu do painel">
+  <ul>
+    <li><a href="#carteira" data-nav="carteira"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="11" rx="1"/><rect x="17" y="4" width="4" height="7" rx="1"/></svg><span class="nl">Carteira</span> <span class="n bad" id="nav-acao" hidden></span></a></li>
+    <li><a href="#resumo" data-nav="resumo"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><polyline points="7 14 11 10 14 13 20 7"/></svg><span class="nl">Resumo</span></a></li>
+    <li><a href="#funil" data-nav="funil"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18l-7 8v6l-4 2v-8z"/></svg><span class="nl"><span class="so-desk-i">Funil e soluções</span><span class="so-mob-i">Funil</span></span></a></li>
+    <li><a href="#saude" data-nav="saude"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="nl"><span class="so-desk-i">Saúde e prazos</span><span class="so-mob-i">Saúde</span></span></a></li>
+    <li><a href="#qualidade" data-nav="qualidade"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><span class="nl"><span class="so-desk-i">Qualidade dos dados</span><span class="so-mob-i">Qualidade</span></span> <span class="n" id="nav-qual" hidden></span></a></li>
+  </ul>
+</nav>
+
+<main class="wrap" id="conteudo" tabindex="-1">
+  <p id="write-note" class="note carregando" role="status">Carregando dados e permissões…</p>
+
+  <!-- 1. Carteira (remodelo 11/11: abertura do app, com o que exige ação) -->
+  <section class="sec" id="carteira" data-sec="carteira" aria-labelledby="h-carteira">
+    <div class="sec-h">
+      <div class="tt"><h2 id="h-carteira"><span class="num">01</span> Carteira <span class="tag dim" id="count-view"></span></h2><p>O que exige ação fica na frente. Toque num projeto para ver e editar.</p></div>
+      <button class="btn btn-ghost btn-sm sec-toggle" type="button" aria-expanded="true" aria-controls="b-carteira"><svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg><span>Recolher</span></button>
+    </div>
+    <div class="sec-body" id="b-carteira">
+          <article class="panel acao-panel" id="acao-panel">
+            <div class="panel-h"><h3>Exige ação <button class="info" type="button" data-tip="Regra: cards abertos (não concluídos) atrasados, A fazer ou Em andamento, sem a etapa OLD/FALHOU (projeto perdido), e qualquer card com tarefa vencida ou para hoje.\nOrdem: atrasados primeiro, depois tarefas vencidas ou do dia, depois o prazo mais próximo e a última atualização." aria-label="Como a lista é montada">i</button></h3><span class="meta" id="acao-meta"></span></div>
+            <div class="panel-b u-py4"><ul class="alist" id="acao-list"><li class="skel-row" aria-hidden="true"><span class="skel"></span></li><li class="skel-row" aria-hidden="true"><span class="skel"></span></li><li class="skel-row" aria-hidden="true"><span class="skel"></span></li><li class="skel-row" aria-hidden="true"><span class="skel"></span></li><li class="skel-row" aria-hidden="true"><span class="skel"></span></li><li class="skel-row" aria-hidden="true"><span class="skel"></span></li></ul></div>
+            <div class="panel-f"><button class="btn btn-sm" type="button" id="acao-mais" hidden>Ver todos</button><span id="acao-legenda"><span class="legend-inline ac-leg"><span><i class="ac-d-bad"></i>vencido</span><span><i class="ac-d-tk"></i>tarefa vencida ou de hoje</span><span><i class="ac-d-warn"></i>vence em até 3 dias / atenção</span><span><i class="ac-d-ok"></i>no prazo</span></span></span></div>
+          </article>
+      <div class="fbar" hidden></div>
+      <div class="chips" role="group" aria-label="Filtros rápidos" id="chips"></div>
+      <div class="toolbar">
+        <div class="view-toggle" role="group" aria-label="Modo de visualização">
+          <button class="btn btn-sm" type="button" id="view-list" aria-pressed="true">Lista</button>
+          <button class="btn btn-sm" type="button" id="view-board" aria-pressed="false">Quadro</button>
+        </div>
+        <label class="search"><span class="sr-only">Buscar</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input class="inp" id="q" type="search" list="iniciativas-dl" placeholder="Buscar por cliente, título ou solução" autocomplete="off" /></label>
+        <datalist id="iniciativas-dl"></datalist>
+        <label><span class="sr-only">Etapa</span><select class="sel" id="f-stage-filter"><option value="">Todas as etapas</option></select></label>
+        <label><span class="sr-only">Status</span><select class="sel" id="f-status-filter">
+          <option value="">Todos os status</option><option value="todo">A fazer</option><option value="doing">Em andamento</option><option value="done">Concluído</option>
+        </select></label>
+        <label><span class="sr-only">Saúde</span><select class="sel" id="f-saude-filter"><option value="">Toda saúde</option></select></label>
+        <label><span class="sr-only">Período de criação no Planner</span><select class="sel" id="f-periodo-filter"><option value="">Todo período (Planner)</option></select></label>
+        <label><span class="sr-only">Ordenar</span><select class="sel" id="f-sort">
+          <option value="acao">Ordem: prioridade de ação</option><option value="recente">Ordem: atualizados recentemente</option><option value="prazo">Ordem: prazo do Planner</option><option value="valor">Ordem: maior valor</option><option value="titulo">Ordem: título (A a Z)</option>
+        </select></label>
+        <button class="btn btn-sm btn-ghost" type="button" id="f-limpar" hidden>Limpar filtros</button>
+      </div>
+      <div class="ptable" id="card-list"></div>
+      <div class="kboard" id="kanban-board" hidden role="region" aria-label="Quadro Kanban por etapa"></div>
+      <div class="more"><button class="btn btn-sm" type="button" id="list-more" hidden></button></div>
+    </div>
+  </section>
+
+  <!-- 2. Resumo da diretoria (Lote 8: hero, KPIs, valor) -->
+  <section class="sec pos-carga" id="resumo" data-sec="resumo" aria-labelledby="h-resumo">
+    <div class="sec-h">
+      <div class="tt"><h2 id="h-resumo"><span class="num">02</span> Resumo da diretoria</h2><p>Valor ganho separado do aberto. Números lidos do app agora; o ⓘ mostra origem e regra.</p></div>
+      <button class="btn btn-ghost btn-sm sec-toggle" type="button" aria-expanded="true" aria-controls="b-resumo"><svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg><span>Recolher</span></button>
+    </div>
+    <div class="sec-body" id="b-resumo">
+      <div class="hero" id="hero" data-slide="Abertura">
+        <div class="hero-bg" aria-hidden="true"><span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span>
+          <svg class="hero-lines" viewBox="0 0 400 400" preserveAspectRatio="xMaxYMax meet"><circle class="hl" pathLength="1" cx="330" cy="330" r="120"/><circle class="hl hl2" pathLength="1" cx="330" cy="330" r="190"/><circle class="hl hl3" pathLength="1" cx="330" cy="330" r="260"/></svg>
+        </div>
+        <div class="hero-in revv">
+          <p class="kicker" id="hero-kicker">TCV ganho</p>
+          <p class="hero-num" id="hero-num" aria-hidden="true"></p>
+          <p class="sr-only" id="hero-a11y" role="status"></p>
+          <p class="hero-full" id="hero-full"></p>
+          <p class="hero-sub" id="hero-sub"></p>
+          <p class="hero-origem" id="hero-origem"></p>
+          <ul class="hero-meta" id="hero-meta"></ul>
+        </div>
+      </div>
+      <div class="grid g-kpi" id="kpis" aria-busy="true"><div class="kpi kpi-skel" aria-hidden="true"><span class="skel sk-h"></span><span class="skel sk-v"></span><span class="skel sk-s"></span></div><div class="kpi kpi-skel" aria-hidden="true"><span class="skel sk-h"></span><span class="skel sk-v"></span><span class="skel sk-s"></span></div><div class="kpi kpi-skel" aria-hidden="true"><span class="skel sk-h"></span><span class="skel sk-v"></span><span class="skel sk-s"></span></div><div class="kpi kpi-skel" aria-hidden="true"><span class="skel sk-h"></span><span class="skel sk-v"></span><span class="skel sk-s"></span></div><div class="kpi kpi-skel" aria-hidden="true"><span class="skel sk-h"></span><span class="skel sk-v"></span><span class="skel sk-s"></span></div><div class="kpi kpi-skel" aria-hidden="true"><span class="skel sk-h"></span><span class="skel sk-v"></span><span class="skel sk-s"></span></div></div>
+      <div class="grid g-main g-valor u-mt4">
+        <article class="panel" id="ganhos">
+          <div class="panel-h"><h3>Valor com proposta registrada <button class="info" type="button" data-tip="TCV lido só de linhas de tabela com rótulo explícito na descrição do card (TCV, MRC, OTC ou TOTAL), ou do campo de valores, quando a API enviar.\nTexto solto como “TCV estimado R$ 200k” não entra.\nPasse o mouse no valor para ver a linha de origem." aria-label="De onde vem o valor">i</button></h3><span class="meta" id="valor-meta"></span></div>
+          <div class="panel-b" id="ganhos-list"><div class="skel-row" aria-hidden="true"><span class="skel"></span></div><div class="skel-row" aria-hidden="true"><span class="skel"></span></div><div class="skel-row" aria-hidden="true"><span class="skel"></span></div><div class="skel-row" aria-hidden="true"><span class="skel"></span></div></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Funil e status -->
+  <section class="sec pos-carga" id="funil" data-sec="funil" aria-labelledby="h-funil">
+    <div class="sec-h">
+      <div class="tt"><h2 id="h-funil"><span class="num">03</span> Funil e soluções</h2><p>Números lidos agora. Clique numa barra para filtrar o resto; de novo, para tirar.</p></div>
+      <button class="btn btn-ghost btn-sm sec-toggle" type="button" aria-expanded="true" aria-controls="b-funil"><svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg><span>Recolher</span></button>
+    </div>
+    <div class="sec-body" id="b-funil">
+      <div class="fbar" hidden></div>
+      <div class="grid g-2">
+        <article class="panel p-funil">
+          <div class="panel-h"><h3>Funil por etapa <button class="info" type="button" data-tip="Quantidade de cards ativos em cada etapa comercial (etapa do card), na ordem do fluxo.\nA parte vermelha da barra são os abertos atrasados.\nO número menor é o total de abertos na etapa." aria-label="Sobre o funil">i</button></h3><span class="legend-inline"><span><i class="u-bg-accent"></i>cards</span><span><i class="u-bg-danger"></i>atrasados</span></span></div>
+          <div class="panel-b"><div class="hbars" id="funnel"></div></div>
+        </article>
+        <article class="panel p-funil">
+          <div class="panel-h"><h3>Status físico <button class="info" type="button" data-tip="Status do card no app (A fazer, Em andamento, Concluído), independente da etapa comercial." aria-label="Sobre o status físico">i</button></h3></div>
+          <div class="panel-b"><div class="donut-wrap"><svg id="donut" viewBox="0 0 160 160" role="img" aria-label="Distribuição por status" data-titulo="Status físico dos cards"></svg><ul class="legend" id="donut-legend"></ul></div></div>
+        </article>
+        <article class="panel p-sol">
+          <div class="panel-h"><h3>Soluções por família <button class="info" type="button" data-tip="Agrupamento por palavra-chave do escopo escrito no card (por exemplo “Starlink”, “DIA”, “L2L”, “SD-WAN”, “IoT”, “5G”).\nCada projeto conta numa família só (a primeira que casar, na ordem da lista).\nCards “A definir” ficam fora daqui e aparecem em Qualidade dos dados." aria-label="Como as famílias são montadas">i</button></h3><span class="meta" id="sol-meta"></span></div>
+          <div class="panel-b"><div class="hbars" id="sol-bars"></div></div>
+        </article>
+        <article class="panel p-sol">
+          <div class="panel-h"><h3>TCV por solução <button class="info" type="button" data-tip="Soma do TCV dos projetos de cada família de solução.\nCada projeto conta numa família só (a primeira que casar), então a soma não passa do total." aria-label="Sobre o TCV por solução">i</button></h3><span class="meta">valor registrado</span></div>
+          <div class="panel-b"><div class="hbars" id="sol-tcv"></div></div>
+        </article>
+        <article class="panel p-funil">
+          <div class="panel-h"><h3>TCV por etapa <button class="info" type="button" data-tip="Soma do TCV (linha de tabela de proposta na descrição) dos cards de cada etapa.\nEtapa sem nenhum card com TCV aparece como “sem dado”.\nA soma das etapas é igual ao TCV total do /api/summary." aria-label="Sobre o TCV por etapa">i</button></h3><span class="meta">valor registrado</span></div>
+          <div class="panel-b"><div class="hbars" id="funnel-tcv"></div></div>
+        </article>
+        <article class="panel p-sol">
+          <div class="panel-h"><h3>Carga por responsável <button class="info" type="button" data-tip="Cards abertos por pessoa, lidos do campo “Responsáveis” na descrição do card (vindo do Planner).\nUm card com duas pessoas conta para as duas." aria-label="Sobre a carga">i</button></h3><span class="meta">só abertos</span></div>
+          <div class="panel-b"><div class="hbars" id="resp-bars"></div></div>
+        </article>
+      </div>
+      <article class="panel rk-panel p-valor">
+        <div class="panel-h"><h3>Ranking por TCV <button class="info" type="button" data-tip="Até 10 projetos com TCV registrado na descrição, do maior para o menor. Respeita os filtros ativos.\nDias desde a criação: contados da data “Criado em” do Planner até hoje (Brasília).\nTempo na etapa: dias desde a última mudança de etapa registrada, feita no Kanzo ou pelo painel (o registro começou em 09/11/2026). Sem mudança registrada = sem dado." aria-label="Sobre o ranking por TCV">i</button></h3><span class="meta" id="rk-meta"></span></div>
+        <div class="panel-b" id="ranking"></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- 4. Saúde, prazos e evolução (Lote 4) -->
+  <section class="sec pos-carga" id="saude" data-sec="saude" aria-labelledby="h-saude">
+    <div class="sec-h">
+      <div class="tt"><h2 id="h-saude"><span class="num">04</span> Saúde e prazos</h2><p>Saúde e prazo dos abertos e o ritmo mensal pelas datas do Planner. Clique para filtrar.</p></div>
+      <button class="btn btn-ghost btn-sm sec-toggle" type="button" aria-expanded="true" aria-controls="b-saude"><svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg><span>Recolher</span></button>
+    </div>
+    <div class="sec-body" id="b-saude">
+      <div class="fbar" hidden></div>
+      <div class="grid g-2">
+        <article class="panel p-saude">
+          <div class="panel-h"><h3>Saúde dos abertos <button class="info" type="button" data-tip="Linha “Saúde:” da descrição do card (ou tag health:).\nCard aberto sem essa informação conta como “Sem dado”." aria-label="Sobre a saúde dos abertos">i</button></h3><span class="meta" id="saude-meta"></span></div>
+          <div class="panel-b"><div class="hbars" id="saude-bars"></div></div>
+        </article>
+        <article class="panel p-prazo">
+          <div class="panel-h"><h3>Prazos dos abertos <button class="info" type="button" data-tip="Prazo efetivo: o prazo do card; se não houver, a data de conclusão do Planner.\nContado em dias de Brasília. OLD/FALHOU e concluídos ficam fora." aria-label="Sobre os prazos dos abertos">i</button></h3><span class="meta" id="prazo-meta"></span></div>
+          <div class="panel-b"><div class="hbars" id="prazo-bars"></div></div>
+        </article>
+      </div>
+      <article class="panel p-evo">
+        <div class="panel-h"><h3>Evolução mensal <button class="info" type="button" data-tip="Criados: “Criado em” da linha Datas Planner.\nConcluídos: “Concluído em” da mesma linha.\nNão usamos data de fechamento do Kanzo (ela não existe). Card sem data fica fora do gráfico e é contado abaixo." aria-label="Sobre a evolução mensal">i</button></h3><span class="legend-inline"><span><i class="u-bg-s1"></i>criados</span><span><i class="u-bg-s2"></i>concluídos</span></span><span class="meta">últimos 12 meses · datas do Planner</span></div>
+        <div class="panel-b"><div id="mensal"></div><p class="hint" id="mensal-nota"></p></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- 5. Qualidade -->
+  <section class="sec pos-carga" id="qualidade" data-sec="qualidade" aria-labelledby="h-qual">
+    <div class="sec-h">
+      <div class="tt"><h2 id="h-qual"><span class="num">05</span> Qualidade dos dados</h2><p>O que falta nos cards para os indicadores ficarem completos. Clique para resolver.</p></div>
+      <button class="btn btn-ghost btn-sm sec-toggle" type="button" aria-expanded="true" aria-controls="b-qual"><svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg><span>Recolher</span></button>
+    </div>
+    <div class="sec-body" id="b-qual"><div id="qual-grid"></div></div>
+  </section>
+</main>
+
+<footer class="foot pos-carga">
+  <span>Plataforma - Controle Geral de Pré Venda · o app é a fonte oficial (Cloudflare) · horários de Brasília</span>
+  <span class="foot-d"><button class="btn btn-sm btn-ghost btn-tema" id="btn-tema-2" type="button" aria-pressed="false">Tema claro</button><b>byGui</b></span>
+</footer>
+
+<div class="drawer-bg" id="drawer-bg"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" aria-hidden="true">
+  <header>
+    <div class="h"><h2 id="drawer-title">Projeto</h2><div class="tags" id="drawer-tags"></div></div>
+    <button class="btn btn-ghost btn-sm" id="drawer-close" type="button" aria-label="Fechar detalhe">✕</button>
+  </header>
+  <div class="body" id="drawer-body" data-ef-scope="1"></div>
+  <div class="docs" id="drawer-docs" hidden><span class="docs-t">Rascunhos (só admin, não grava no card):</span>
+    <a class="btn btn-sm" id="doc-pricing" target="_blank" rel="noopener" href="#">Pricing</a><a class="btn btn-sm btn-ghost" id="doc-pricing-md" href="#" aria-label="Baixar rascunho de pricing em Markdown">.md</a>
+    <a class="btn btn-sm" id="doc-proposta" target="_blank" rel="noopener" href="#">Proposta</a><a class="btn btn-sm btn-ghost" id="doc-proposta-md" href="#" aria-label="Baixar esqueleto de proposta em Markdown">.md</a></div>
+  <div class="actions">
+    <button class="btn btn-danger btn-sm needs-live" id="drawer-delete" type="button">Remover</button>
+    <span class="sp"></span>
+    <button class="btn btn-sm" id="drawer-cancel" type="button">Fechar</button>
+    <button class="btn btn-primary btn-sm needs-live" id="drawer-save" type="button">Salvar</button>
+  </div>
+</aside>
+<div class="ft" id="ft" role="dialog" aria-modal="true" aria-labelledby="ft-h" hidden>
+  <header class="ft-top">
+    <div class="ft-tt"><h2 id="ft-h"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Força-tarefa de qualidade</h2>
+      <div class="ft-prog-w"><div class="ft-prog" id="ft-prog" role="progressbar" aria-label="Progresso da sessão" aria-valuemin="0" aria-valuenow="0" aria-valuemax="0"><i></i></div><span id="ft-prog-t" aria-live="polite"></span></div></div>
+    <div class="ft-acts">
+      <label class="tgl" data-tip="Ao completar um projeto, vai sozinho para o próximo."><input type="checkbox" id="ft-avancar" checked><span></span>Avançar sozinho</label>
+      <button class="btn btn-ghost btn-sm" type="button" id="ft-hist" data-tip="Últimas 15 edições, com desfazer (u)."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg><span class="lbl">Histórico</span></button>
+      <button class="btn btn-ghost btn-sm" type="button" id="ft-kbd" aria-label="Atalhos de teclado" data-tip="Atalhos (?)"><kbd>?</kbd></button>
+      <button class="btn btn-sm" type="button" id="ft-close" aria-label="Fechar força-tarefa">Fechar <kbd>Esc</kbd></button>
+    </div>
+  </header>
+  <nav class="ft-tabs" id="ft-tabs" role="tablist" aria-label="Indicadores"></nav>
+  <div class="ft-body">
+    <div class="ft-side">
+      <div class="ft-side-h"><span>Projetos</span><button type="button" class="btn btn-ghost btn-sm" id="ft-sel-todos" data-tip="Seleciona todos os que ainda têm pendência neste indicador, para preencher em lote.">Selecionar todos</button></div>
+      <div class="ft-list" id="ft-list" role="listbox" aria-label="Projetos com pendência" aria-multiselectable="false"></div>
+    </div>
+    <section class="ft-card" id="ft-card" aria-labelledby="ftc-t"></section>
+  </div>
+  <div class="ft-batch" id="ft-batch" hidden role="region" aria-label="Preencher em lote">
+    <b id="ft-batch-n"></b>
+    <label><span class="sr-only">Campo</span><select class="sel" id="ft-batch-campo">
+      <option value="responsaveis">Responsáveis</option><option value="solucao">Solução / escopo</option><option value="prazo">Prazo</option><option value="tcv">TCV</option><option value="saude">Saúde</option><option value="proxima">Próxima ação</option>
+    </select></label>
+    <label class="grow"><span class="sr-only">Valor</span><input class="inp" id="ft-batch-v" list="ft-batch-dl" autocomplete="off"><datalist id="ft-batch-dl"></datalist></label>
+    <label class="tgl sm" id="ft-batch-modo" data-tip="Desligado: adiciona a pessoa aos responsáveis atuais. Ligado: substitui."><input type="checkbox" id="ft-batch-sub"><span></span>Substituir</label>
+    <button class="btn btn-primary btn-sm" type="button" id="ft-batch-go">Aplicar</button>
+    <button class="btn btn-ghost btn-sm" type="button" id="ft-batch-x">Limpar seleção</button>
+  </div>
+</div>
+<div class="kbd-help" id="kbd-help" hidden role="dialog" aria-label="Atalhos de teclado">
+  <div class="kbd-box"><div class="pop-h"><b>Atalhos de teclado</b><button type="button" class="btn btn-ghost btn-sm" data-kbd-x aria-label="Fechar">✕</button></div>
+    <dl>
+      <dt><kbd>F</kbd></dt><dd>Abrir a força-tarefa</dd>
+      <dt><kbd>j</kbd> <kbd>k</kbd></dt><dd>Próximo e anterior projeto</dd>
+      <dt><kbd>e</kbd> ou <kbd>Enter</kbd></dt><dd>Editar o campo que falta (ou o campo em foco)</dd>
+      <dt><kbd>n</kbd></dt><dd>Próximo projeto com pendência</dd>
+      <dt><kbd>Enter</kbd> <kbd>Esc</kbd> <kbd>Tab</kbd></dt><dd>Na edição: salvar, cancelar, próximo campo</dd>
+      <dt><kbd>x</kbd></dt><dd>Marcar para lote</dd>
+      <dt><kbd>c</kbd> <kbd>v</kbd></dt><dd>Copiar o valor do campo em foco e colar em outro projeto</dd>
+      <dt><kbd>s</kbd></dt><dd>Salvar tudo agora</dd>
+      <dt><kbd>u</kbd> ou <kbd>Ctrl Z</kbd></dt><dd>Desfazer a última edição</dd>
+      <dt><kbd>h</kbd></dt><dd>Histórico das últimas 15 edições</dd>
+      <dt><kbd>0</kbd> a <kbd>4</kbd></dt><dd>Trocar de indicador</dd>
+      <dt><kbd>/</kbd></dt><dd>Buscar na carteira</dd>
+    </dl></div>
+</div>
+<div class="sr-only" id="sr-status" role="status" aria-live="polite"></div>
+<div class="tip" id="tip" aria-hidden="true"></div>
+<div class="pres-bar" id="pres-bar" hidden><span class="pres-t">Modo apresentação · Esc sai</span><button class="btn btn-sm" id="pres-prev" type="button" aria-keyshortcuts="ArrowLeft" data-tip="Slide anterior (seta esquerda).">◀ Anterior</button><span id="pres-count" aria-live="polite">1 / 6</span><button class="btn btn-sm" id="pres-next" type="button" aria-keyshortcuts="ArrowRight" data-tip="Próximo slide (seta direita).">Próxima ▶</button><button class="btn btn-sm" id="btn-pdf" type="button" data-tip="Abre a impressão do navegador. Escolha “Salvar como PDF”, papel A4.">Salvar PDF</button><button class="btn btn-sm btn-ghost" id="btn-pres-sair" type="button">Sair</button></div>
+
+<div class="modal-bg" id="new-bg" hidden></div>
+<div class="modal" id="new-modal" role="dialog" aria-modal="true" aria-labelledby="new-title" hidden>
+  <h2 id="new-title">Novo projeto</h2>
+  <form id="new-form">
+    <div class="fld"><label for="new-name">Título</label><input class="inp" id="new-name" name="title" required maxlength="200" autocomplete="off" /></div>
+    <div class="fld"><label for="new-stage">Etapa</label><select class="sel" id="new-stage" name="stage"></select></div>
+    <div class="fld"><label for="new-desc">Descrição</label><textarea class="inp u-minh70" id="new-desc" name="description" maxlength="8000" placeholder="Opcional"></textarea></div>
+    <div class="row2">
+      <div class="fld"><label for="new-prazo">Prazo</label><input class="inp" id="new-prazo" name="prazo" type="date" /></div>
+      <div class="fld"><label for="new-saude">Saúde</label><select class="sel" id="new-saude" name="saude"><option value="">—</option><option>No prazo</option><option>Atenção</option><option>Em risco</option><option>Bloqueado</option></select></div>
+    </div>
+    <p class="hint">Grava no app na hora. Depois de criar, o card abre para você completar e criar as tarefas.</p>
+    <div class="actions">
+      <button class="btn btn-sm" type="button" id="new-cancel">Cancelar</button>
+      <button class="btn btn-primary btn-sm" type="submit" id="new-ok">Criar</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/estilos-dinamicos.js"></script>
+<script src="js/kanzo-core.js"></script>
+<script src="js/format.js"></script>
+<script src="js/data-source.js"></script>
+<script src="js/kpi.js"></script>
+<script src="js/fields.js"></script>
+<script src="js/store.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/editor.js"></script>
+<script src="js/docs.js"></script>
+<script src="js/tarefas.js"></script>
+<script src="js/app.js"></script>
+<script src="js/alertas.js"></script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+/* Lote 8 · camada visual "marketing" do painel (linha do mockup): Manrope local, hero
+   com TCV ganho, tablist de visões, anéis de gráfico, entrada em stagger e modo
+   apresentação em slides. Animação só por transform/opacity (+ stroke-dashoffset).
+   Nada de estilo inline (CSP): valores dinâmicos chegam via data-* e o
+   js/estilos-dinamicos.js aplica via CSSOM. byGui */
+
+/* Fonte local (no bundle, atrás do login). font-display: optional: se não carregar em
+   tempo, mantém a Inter/fallback sem piscar. */
+@font-face{font-family:"Geist";src:url(../fonts/geist-var-latin.woff2) format("woff2");font-weight:100 900;font-style:normal;font-display:optional}
+/* --font definido em tokens.css (Geist local, self-hosted, ~26 KB) */
+/* escala fluida só para o hero (o resto do painel segue a escala de tokens) */
+:root{--fs-hero:clamp(2.6rem,1.2rem + 6.5vw,5.4rem);--fs-kicker:clamp(.68rem,.56rem + .4vw,.8rem)}
+
+/* ---------- abertura (hero) dentro da seção 01 ---------- */
+.hero{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:var(--r-l);background:
+  radial-gradient(58rem 24rem at 82% -30%,var(--accent-bg),transparent 62%),
+  radial-gradient(40rem 20rem at 6% 118%,var(--brand-bg),transparent 70%),
+  linear-gradient(165deg,var(--surface-2),var(--surface));padding:clamp(20px,2.4vw,44px) clamp(18px,3vw,52px);margin-bottom:var(--s5);min-height:clamp(190px,26vw,320px);display:flex;align-items:center}
+.hero-in{position:relative;max-width:46rem}
+.hero .kicker{font-size:var(--fs-kicker);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 var(--s2)}
+.hero-num{font-variation-settings:"wght" 800;font-size:var(--fs-hero);line-height:1.05;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin:0 0 var(--s1);color:var(--text)}
+.hero-num .cur{font-variation-settings:"wght" 500;font-size:.44em;color:var(--text-2);margin-right:.14em}
+.hero-num .u{font-variation-settings:"wght" 600;font-size:.4em;color:var(--text-2);margin-left:.1em}
+.hero-num .h-sd{font-variation-settings:"wght" 600;font-size:.5em;color:var(--text-3)}
+.hero-full{font-variation-settings:"wght" 700;color:var(--text);margin:0 0 var(--s2)}
+.hero-sub,.hero-origem{color:var(--text-2);font-size:var(--fs-14);margin:0 0 var(--s3);max-width:44rem}
+.hero-origem{color:var(--text-3);font-size:var(--fs-12)}
+.hero-meta{display:flex;flex-wrap:wrap;gap:var(--s2);margin:var(--s3) 0 0;padding:0;list-style:none}
+.hero-meta .chip{display:inline-flex;align-items:center;gap:.35em;font-size:var(--fs-13);color:var(--text-2);border:1px solid var(--line-2);border-radius:99px;padding:.28em .8em;background:var(--accent-bg)}
+.hero-bg{position:absolute;inset:0;pointer-events:none}
+.orb{position:absolute;border-radius:50%;filter:blur(52px);opacity:.5;will-change:transform}
+.orb.o1{width:220px;height:220px;top:-70px;right:12%;background:var(--accent-bg);animation:orb-o1 16s var(--ease) infinite alternate}
+.orb.o2{width:170px;height:170px;bottom:-90px;left:8%;background:var(--brand-bg);animation:orb-o2 19s var(--ease) infinite alternate}
+.orb.o3{width:120px;height:120px;top:24%;left:38%;background:var(--accent-bg);opacity:.3;animation:orb-o2 24s var(--ease) infinite alternate}
+@keyframes orb-o1{from{transform:translate3d(0,0,0)}to{transform:translate3d(-46px,34px,0)}}
+@keyframes orb-o2{from{transform:translate3d(0,0,0)}to{transform:translate3d(38px,-26px,0)}}
+.hero-lines{position:absolute;right:-40px;bottom:-60px;width:min(46vmin,430px);height:auto;opacity:.5}
+.hero-lines .hl{fill:none;stroke:var(--accent);stroke-width:1;opacity:.4;stroke-dasharray:1 1;stroke-dashoffset:var(--off,1);transition:stroke-dashoffset 1s var(--ease)}
+.hero-lines .hl2{stroke-dasharray:1 .8;opacity:.3}
+.hero-lines .hl3{stroke-dasharray:.9 1;opacity:.2}
+
+/* entrada do hero só na primeira pintura */
+.lote8-on .hero-in{animation:ent-hero .7s var(--ease) both}
+.lote8-on #kpis>.kpi{animation:ent-kpi .55s var(--ease) both;animation-delay:calc(var(--i,0)*.08s)}
+@keyframes ent-hero{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes ent-kpi{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.lote8-on .hero-lines .hl{animation:hl-desenha 1.4s var(--ease) .35s both}
+.lote8-on .hero-lines .hl2{animation-delay:.6s}
+.lote8-on .hero-lines .hl3{animation-delay:.85s}
+@keyframes hl-desenha{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+.lote8-on .revv{opacity:0;transform:translateY(14px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+.lote8-on .revv.revv-on{opacity:1;transform:none}
+/* entre na primeira pintura só: depois disso (classe ja-pintou no html) tudo no estado final */
+.ja-pintou .hero-in,.ja-pintou #kpis>.kpi,.ja-pintou .revv{animation:none!important;transition:none!important;opacity:1;transform:none}
+.ja-pintou .orb{animation:none!important}
+.ja-pintou .hero-lines .hl{animation:none!important;stroke-dashoffset:0}
+
+/* ---------- tablist de visões (resumo / funil / soluções) ---------- */
+.tabs{padding:0 calc(var(--s5) + 2px);display:flex;align-items:flex-end;background:var(--bg-2);border-bottom:1px solid var(--line)}
+.tablist{display:inline-flex;gap:2px;background:var(--surface);border:1px solid var(--line);border-bottom:0;border-radius:var(--r-m) var(--r-m) 0 0;overflow:hidden}
+.tab{font-family:var(--font);font-variation-settings:"wght" 600;font-size:var(--fs-14);color:var(--text-2);padding:9px 18px 11px;background:none;border:0;border-bottom:2px solid transparent;cursor:pointer}
+.tab[aria-selected="true"]{color:var(--text);border-bottom-color:var(--brand);background:var(--surface-2)}
+.tab:focus-visible{outline:none;box-shadow:var(--focus);z-index:1}
+@media (max-width:640px){.tabs{padding:0 var(--s3)}.tab{padding:8px 12px;font-size:var(--fs-13)}}
+
+/* visões: substituídas no remodelo 11/11 por um menu só (uma seção por vez); ver remodelo.css */
+
+/* ---------- anéis e linha (charts.js desenha; classes aqui) ---------- */
+.anel{display:flex;flex-direction:column;margin:0}
+.anel .anel-svg{width:min(240px,52%);height:auto;margin:0 auto;display:block;flex:0 0 auto}
+.anel .seg{fill:none;stroke-dasharray:1 1;stroke-dashoffset:var(--off,1);transition:stroke-dashoffset .85s var(--ease) .1s;stroke-linecap:butt}
+.anel .anel-track{fill:none}
+.anel .ccd{position:relative}
+.anel .anel-num{dominant-baseline:middle}
+.anel-l{display:flex;flex-wrap:wrap;gap:6px;margin:var(--s3) 0 0;padding:0;list-style:none;justify-content:center}
+.anel-l .lg{display:inline-flex;align-items:center;gap:.45em;font-size:var(--fs-13);color:var(--text-2);border:1px solid var(--line);border-radius:99px;padding:.22em .7em;background:none;cursor:default}
+.anel-l button.lg{font-family:var(--font);cursor:pointer}
+.anel-l button.lg:hover{border-color:var(--line-2);color:var(--text)}
+.anel-l .lg .sw{width:10px;height:10px;border-radius:3px;display:inline-block;flex:0 0 auto}
+.anel-l .lg[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent-line);background:var(--accent-bg)}
+.anel-l .lg:focus-visible{outline:none;box-shadow:var(--focus)}
+.anel-painel .panel-b,.sol-anel .panel-b{display:flex;flex-direction:column}
+.linha{position:relative;margin:0}
+.linha>svg{width:100%;height:auto;display:block}
+.linha .curva{fill:none;stroke-width:2.5;vector-effect:non-scaling-stroke;stroke-dasharray:1 1;stroke-dashoffset:var(--off,1);transition:stroke-dashoffset 1.1s var(--ease)}
+.linha .fundo{stroke:none;opacity:0;transition:opacity .8s var(--ease) .5s}
+.linha.reve .fundo{opacity:.16}
+.linha circle{fill-opacity:0;opacity:0;transition:opacity .4s var(--ease) .8s}
+.linha.reve circle{opacity:1}
+.linha .grade{stroke:var(--line);stroke-width:1;opacity:.6}
+.linha .st1{stroke:var(--c1)}.linha .st1.fundo{fill:var(--c1)}
+.linha .st2{stroke:var(--c2)}.linha .st2.fundo{fill:var(--c2)}
+.linha .lx{stroke:var(--line-2);stroke-width:1;shape-rendering:crispEdges}
+.linha-meses{display:flex;flex-wrap:wrap;gap:2px;margin:var(--s2) 0 0;padding:0;list-style:none}
+.linha-meses button,.linha-meses span{font-family:var(--font);font-variation-settings:"wght" 600;font-size:var(--fs-12);color:var(--text-3);background:none;border:0;border-radius:6px;padding:6px 8px;display:inline-block}
+.linha-meses span{padding-inline:4px}
+.linha-meses button[aria-pressed="true"]{color:var(--text);background:var(--accent-bg);box-shadow:inset 0 0 0 1px var(--accent-line)}
+.linha-meses button:focus-visible{outline:none;box-shadow:var(--focus)}
+.linha-painel .panel-b{display:flex;flex-direction:column}
+
+/* ---------- modo apresentação: slides ---------- */
+body.apresentando .top,body.apresentando .secnav,body.apresentando .tabs,body.apresentando footer,body.apresentando #write-note,body.apresentando .sec>.sec-h{display:none!important}
+body.apresentando main>.sec{display:none}
+body.apresentando main>.sec .sec-body>*,body.apresentando main>.sec .grid>*,body.apresentando main>.sec .g-main>*{display:none}
+body.apresentando[data-slidex="1"] #resumo,body.apresentando[data-slidex="2"] #resumo,body.apresentando[data-slidex="3"] #saude,body.apresentando[data-slidex="4"] #saude,body.apresentando[data-slidex="5"] #funil,body.apresentando[data-slidex="6"] #funil{display:block}
+body.apresentando[data-slidex="1"] #b-resumo .hero{display:flex}
+body.apresentando[data-slidex="2"] #b-resumo .g-kpi{display:grid}
+body.apresentando[data-slidex="2"] #b-resumo .g-main{display:grid}
+body.apresentando[data-slidex="2"] #b-resumo .g-main>*{display:block}
+body.apresentando[data-slidex="3"] #b-saude .p-evo{display:block}
+body.apresentando[data-slidex="4"] #b-saude .p-prazo{display:block}
+body.apresentando[data-slidex="4"] #b-funil .rk-panel{display:block}
+body.apresentando[data-slidex="5"] #b-funil .p-funil{display:block}
+body.apresentando[data-slidex="6"] #b-funil .p-sol{display:block}
+.pres-bar{gap:var(--s3)}
+#pres-count{font-variation-settings:"wght" 700;font-variant-numeric:tabular-nums;color:var(--text-2);min-width:4.2em;text-align:center}
+
+/* impressão: barras e anéis no estado final (nada no meio de animação) */
+@media print{.panel,.sec-body>*,#kpis>*{opacity:1!important;transform:none!important}.hb .t i,.k-bar i,.vbar i{transform:scaleX(var(--p,0))!important}.col .cb i{transform:scaleY(var(--p,0))!important}.anel .seg,.linha .curva{stroke-dashoffset:0!important}.linha.reve .fundo{opacity:.16!important}.linha circle{opacity:1!important}.orb{display:none!important}.hero-lines .hl{stroke-dashoffset:0!important}}
+
+/* movimento reduzido: nada anima; estado final direto */
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.lote8-on .revv{opacity:1;transform:none}.hero-lines .hl{stroke-dashoffset:0}}

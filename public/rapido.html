@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#070B14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CG Rápido">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Registro rápido · Plataforma - Controle Geral de Pré Venda</title>
+<link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/tokens.css">
+<link rel="stylesheet" href="/css/rapido.css">
+</head>
+<body>
+<main class="rp" id="rp">
+  <header class="rp-top">
+    <h1>Registro rápido</h1>
+    <a class="rp-link" href="/">Painel</a>
+  </header>
+  <p class="rp-mac" id="rp-mac" role="status" aria-live="polite">Verificando…</p>
+
+  <section id="rp-somente-admin" class="rp-card rp-aviso" hidden>
+    <p>Somente o admin registra por aqui.</p>
+    <a class="rp-btn" href="/">Voltar ao painel</a>
+  </section>
+
+  <section id="rp-form" hidden>
+    <label class="rp-label" for="rp-texto">O que aconteceu?</label>
+    <textarea id="rp-texto" rows="4" maxlength="2000" inputmode="text" autocomplete="off" autocapitalize="sentences" spellcheck="true"
+      placeholder="Ex.: Cliente Delta, mandei proposta · Cliente Beta aguardando assinatura, prazo sexta · Cliente Eta comentário: cliente pediu revisão de MRC"></textarea>
+    <div class="rp-acoes">
+      <button type="button" class="rp-btn" id="rp-interpretar">Interpretar</button>
+      <button type="button" class="rp-btn rp-sec" id="rp-limpar">Limpar</button>
+    </div>
+    <p class="rp-erro" id="rp-erro" role="alert" hidden></p>
+
+    <section class="rp-card" id="rp-candidatos" hidden aria-labelledby="rp-cand-tit">
+      <h2 id="rp-cand-tit">Qual card?</h2>
+      <ul class="rp-lista" id="rp-cand-lista"></ul>
+    </section>
+
+    <section class="rp-card" id="rp-confirma" hidden aria-labelledby="rp-conf-tit">
+      <h2 id="rp-conf-tit">Confirmar</h2>
+      <p class="rp-card-tit" id="rp-conf-card"></p>
+      <ul class="rp-resumo" id="rp-conf-resumo"></ul>
+      <ul class="rp-avisos" id="rp-conf-avisos"></ul>
+      <label class="rp-check" id="rp-fech-wrap" hidden><input type="checkbox" id="rp-fech"> <span id="rp-fech-txt">Confirmo a mudança de fechamento</span></label>
+      <div class="rp-acoes">
+        <button type="button" class="rp-btn" id="rp-confirmar">Confirmar e gravar</button>
+        <button type="button" class="rp-btn rp-sec" id="rp-editar">Editar</button>
+        <button type="button" class="rp-btn rp-sec" id="rp-cancelar">Cancelar</button>
+      </div>
+    </section>
+
+    <section class="rp-hist" aria-labelledby="rp-hist-tit">
+      <h2 id="rp-hist-tit">Últimos registros</h2>
+      <ul class="rp-lista" id="rp-hist"></ul>
+    </section>
+  </section>
+</main>
+<script src="/js/kanzo-core.js"></script>
+<script src="/js/format.js"></script>
+<script src="/js/fields.js"></script>
+<script src="/js/rapido-parse.js"></script>
+<script src="/js/rapido.js"></script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+/* =====================================================================
+   Tokens do cockpit · Plataforma - Controle Geral de Pré Venda
+   Repaginação 12/11/2026. ÚNICO arquivo com valores de cor do painel:
+   todo o resto (CSS e JS) usa var(--token). Claro = padrão desde 13/11 (repaginação clara);
+   escuro fica como alternativa no seletor de tema. Contraste medido (WCAG AA) em
+   /workspace/alertas/redesign/contraste.md. byGui
+   ===================================================================== */
+
+/* ---------- 1. Tokens semânticos · tema ESCURO (padrão) ---------- */
+:root{
+  color-scheme:dark;
+  /* fundos e superfícies */
+  --background:#070B14;
+  --background-glow-1:rgba(110,168,255,.09);
+  --background-glow-2:rgba(139,134,184,.07);
+  --surface:#0D1322;
+  --surface-sunken:#0A0F1C;
+  --surface-elevated:#131B2E;
+  --surface-hover:#18213A;
+  --surface-strong:#1F2942;
+  --surface-glass:rgba(13,19,34,.74);
+  --surface-glass-strong:rgba(10,15,28,.86);
+  --surface-card:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,0) 55%),#0D1322;
+  --surface-card-hover:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,0) 55%),#111A2C;
+  --glass-blur:blur(14px) saturate(140%);
+  /* bordas: border/border-subtle decorativas; border-strong = contorno de controle (>= 3:1) */
+  --border:rgba(148,163,200,.16);
+  --border-subtle:rgba(148,163,200,.09);
+  --border-strong:#5A6685;
+  --border-glass:rgba(160,180,230,.14);
+  /* acento */
+  --accent:#6EA8FF;
+  --accent-hover:#8DBBFF;
+  --accent-active:#5A95EE;
+  --accent-soft:rgba(110,168,255,.12);
+  --accent-soft-strong:rgba(110,168,255,.20);
+  --accent-border:rgba(110,168,255,.42);
+  --on-accent:#06101F;
+  --accent-alt:#8B86B8;          /* steel-violet, acento secundário */
+  /* estados (tons sóbrios, sem verde/azul berrante) */
+  --success:#7CC9A1;--success-soft:rgba(124,201,161,.12);--success-border:rgba(124,201,161,.34);
+  --warning:#E3B866;--warning-soft:rgba(227,184,102,.12);--warning-border:rgba(227,184,102,.36);
+  --danger:#F08A9A;--danger-soft:rgba(240,138,154,.12);--danger-border:rgba(240,138,154,.40);
+  --info:#9DB4E0;--info-soft:rgba(157,180,224,.11);
+  --brand:#E86AAE;--brand-soft:rgba(232,106,174,.12);   /* magenta Telekom suavizado (tarefa urgente) */
+  /* texto */
+  --text-primary:#E8EBF2;
+  --text-secondary:#A9B1C9;
+  --text-tertiary:#8C95B0;
+  --text-disabled:#5F6884;
+  /* gráficos (>= 3:1 contra surface e surface-elevated) */
+  --chart-series-1:#6EA8FF;--chart-series-2:#8B86B8;--chart-series-3:#7CC9A1;--chart-series-4:#E3B866;
+  --chart-series-5:#E086B6;--chart-series-6:#6CC3C4;--chart-series-7:#B9A4E8;--chart-series-8:#E59A72;
+  --chart-track:#1A2338;
+  --chart-grid:rgba(148,163,200,.14);
+  --chart-fill-opacity:.16;
+  --chart-tooltip-bg:#18213A;
+  /* sobreposição, foco e sombras */
+  --overlay:rgba(3,6,12,.62);
+  --focus-ring:0 0 0 2px #070B14,0 0 0 4px #6EA8FF;
+  --shadow-sm:0 1px 0 rgba(255,255,255,.03) inset,0 1px 2px rgba(0,0,0,.30);
+  --shadow-md:0 1px 0 rgba(255,255,255,.035) inset,0 8px 24px rgba(0,0,0,.30);
+  --shadow-lg:0 1px 0 rgba(255,255,255,.04) inset,0 24px 60px rgba(0,0,0,.50);
+  --glow-accent:0 0 0 1px rgba(110,168,255,.30),0 6px 20px rgba(110,168,255,.22);
+  --shimmer:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.06),rgba(255,255,255,0));
+  --pattern-dot:rgba(148,163,200,.10);
+  --kbd-bg:rgba(0,0,0,.22);--kbd-border:rgba(0,0,0,.28);
+}
+
+/* ---------- 2. Tokens semânticos · tema CLARO ---------- */
+:root[data-tema="claro"]{
+  /* Repaginação clara 13/11/2026 (brief do Guilherme): padrão do app. Fundo cinza-azul,
+     cartões brancos, azul de ação #3E6E96. Magenta Telekom fora da interface.
+     Textos pequenos usam tons um pouco mais escuros que o brief para passar WCAG AA. */
+  color-scheme:light;
+  --background:#E6EDF3;
+  --background-glow-1:#D5E4F0;
+  --background-glow-2:#DCE8F2;
+  --surface:#FFFFFF;
+  --surface-sunken:#F3F7FA;
+  --surface-elevated:#FFFFFF;
+  --surface-hover:#F2F6FA;
+  --surface-strong:#E3EDF5;
+  --surface-glass:rgba(255,255,255,.92);
+  --surface-glass-strong:rgba(255,255,255,.94);
+  --surface-card:#FFFFFF;
+  --surface-card-hover:#FFFFFF;
+  --glass-blur:blur(16px) saturate(140%);
+  --border:#E3EAF1;
+  --border-subtle:#EDF2F6;
+  --border-strong:#7E8C9C;
+  --border-glass:rgba(255,255,255,.7);
+  --accent:#3E6E96;
+  --accent-hover:#345F83;
+  --accent-active:#2B5070;
+  --accent-soft:#E7F0F7;
+  --accent-soft-strong:#DCE9F3;
+  --accent-border:rgba(62,110,150,.32);
+  --on-accent:#FFFFFF;
+  --accent-alt:#8FB4D4;
+  --success:#2F7D62;--success-soft:rgba(47,125,98,.09);--success-border:rgba(47,125,98,.28);
+  --warning:#A65E26;--warning-soft:rgba(184,106,46,.10);--warning-border:rgba(184,106,46,.30);
+  --danger:#B4423A;--danger-soft:rgba(180,66,58,.08);--danger-border:rgba(180,66,58,.30);
+  --info:#3E6E96;--info-soft:rgba(62,110,150,.08);
+  --brand:#56609E;--brand-soft:rgba(86,96,158,.09);
+  --text-primary:#1C2B3A;
+  --text-secondary:#5A6979;
+  --text-tertiary:#647383;
+  --text-disabled:#A3AFBC;
+  --chart-series-1:#3E6E96;--chart-series-2:#8FB4D4;--chart-series-3:#2F7D62;--chart-series-4:#B86A2E;
+  --chart-series-5:#56609E;--chart-series-6:#4E8C9A;--chart-series-7:#7E8C9C;--chart-series-8:#A65E26;
+  --chart-track:#E3EDF5;
+  --chart-grid:rgba(28,43,58,.08);
+  --chart-fill-opacity:.10;
+  --chart-tooltip-bg:#FFFFFF;
+  --overlay:rgba(28,43,58,.32);
+  --focus-ring:0 0 0 2px #FFFFFF,0 0 0 4px #3E6E96;
+  --shadow-sm:0 2px 8px rgba(27,58,90,.06);
+  --shadow-md:0 14px 32px rgba(27,58,90,.08);
+  --shadow-lg:0 22px 48px rgba(27,58,90,.14);
+  --glow-accent:0 6px 18px rgba(62,110,150,.28);
+  --shimmer:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.75),rgba(255,255,255,0));
+  --pattern-dot:rgba(28,43,58,.06);
+  --kbd-bg:rgba(255,255,255,.22);--kbd-border:rgba(255,255,255,.35);
+}
+
+/* Repaginação clara: tokens próprios (os dois temas) */
+:root{--cg-radius:24px;--cg-radius-s:18px;--cg-shadow:var(--shadow-md);--cg-bar-2:var(--chart-series-2);--cg-warn-forte:#B86A2E}
+:root:not([data-tema="claro"]){--cg-warn-forte:var(--warning)}
+
+/* ---------- 3. Escala (independente do tema) ---------- */
+:root{
+  --fs-11:11px;--fs-12:12px;--fs-13:13px;--fs-14:14px;--fs-16:16px;--fs-20:20px;--fs-24:24px;--fs-28:28px;--fs-32:32px;--fs-kpi:clamp(22px,.95rem + .75vw,30px);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Geist",system-ui,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:20px;--s6:24px;--s8:32px;--s10:40px;
+  --r-s:8px;--r-m:10px;--r-l:12px;--r-pill:999px;
+  --ease:cubic-bezier(.2,.8,.2,1);--ease-out:cubic-bezier(.16,1,.3,1);
+  --t-fast:.2s;--t-med:.26s;--t-slow:.35s;
+  --header-h:60px;--nav-h:44px;--sidebar-w:256px;--sidebar-rail:76px;--bottom-nav-h:64px;
+}
+
+/* ---------- 4. Nomes legados (CSS e JS antigos) → tokens semânticos ---------- */
+:root,:root[data-tema="claro"]{
+  --bg:var(--background);--bg-2:var(--surface-sunken);
+  --surface-2:var(--surface-elevated);--surface-3:var(--surface-strong);
+  --line:var(--border);--line-2:var(--border-strong-soft);
+  --text:var(--text-primary);--text-2:var(--text-secondary);--text-3:var(--text-tertiary);
+  --accent-2:var(--accent-alt);--accent-bg:var(--accent-soft);--accent-line:var(--accent-border);
+  --brand-bg:var(--brand-soft);
+  --ok:var(--success);--ok-bg:var(--success-soft);
+  --warn:var(--warning);--warn-bg:var(--warning-soft);
+  --danger-bg:var(--danger-soft);
+  --c1:var(--chart-series-1);--c2:var(--chart-series-3);--c3:var(--chart-series-2);--c4:var(--chart-series-4);
+  --c5:var(--chart-series-5);--c6:var(--chart-series-6);--c7:var(--chart-series-7);--c8:var(--chart-series-8);
+  --focus:var(--focus-ring);--shadow:var(--shadow-md);
+  --glass:var(--surface-glass-strong);--glass-2:var(--surface-glass-strong);--glass-line:var(--border-glass);--glow:var(--shadow-lg);
+}
+:root{--border-strong-soft:rgba(148,163,200,.26)}
+:root[data-tema="claro"]{--border-strong-soft:#D6E0EA}
+
+/* ---------- 5. Tokens de componente (derivados) ---------- */
+/* Qualidade dos dados (editor.css) */
+:root{--q-solucao:#B3AEE6;--q-valor:#E3B866;--q-prazo:#8DBBFF;--q-responsavel:#E99AC6;
+  --q-solucao-bg:rgba(139,134,184,.16);--q-valor-bg:rgba(227,184,102,.12);--q-prazo-bg:rgba(110,168,255,.12);--q-responsavel-bg:rgba(232,106,174,.13)}
+:root[data-tema="claro"]{--q-solucao:#56609E;--q-valor:#A65E26;--q-prazo:#3E6E96;--q-responsavel:#2F7D62;
+  --q-solucao-bg:rgba(86,96,158,.09);--q-valor-bg:rgba(184,106,46,.10);--q-prazo-bg:rgba(62,110,150,.10);--q-responsavel-bg:rgba(47,125,98,.09)}
+/* Exige ação · cartões premium (carteira-premium.css) */
+:root{
+  --ac-bad:#E7A0AB;--ac-bad-bg:rgba(231,160,171,.11);--ac-bad-ln:rgba(231,160,171,.30);
+  --ac-warn:#DDBE82;--ac-warn-bg:rgba(221,190,130,.11);--ac-warn-ln:rgba(221,190,130,.28);
+  --ac-ok:#A3C4B2;--ac-ok-bg:rgba(163,196,178,.10);--ac-ok-ln:rgba(163,196,178,.26);
+  --ac-tk:#C9A6DD;--ac-tk-bg:rgba(201,166,221,.11);--ac-tk-ln:rgba(201,166,221,.30);
+  --ac-wait:#AEB6C8;--ac-wait-bg:rgba(174,182,200,.10);--ac-wait-ln:rgba(174,182,200,.28);
+  --ac-neu:var(--text-tertiary);--ac-neu-bg:rgba(255,255,255,.04);--ac-neu-ln:var(--border-strong-soft);
+  --ac-card:var(--surface-card);--ac-nx-bg:rgba(255,255,255,.035);--ac-sh:var(--shadow-md);
+}
+:root[data-tema="claro"]{
+  --ac-bad:#B4423A;--ac-bad-bg:rgba(180,66,58,.07);--ac-bad-ln:rgba(180,66,58,.26);
+  --ac-warn:#A65E26;--ac-warn-bg:rgba(184,106,46,.09);--ac-warn-ln:rgba(184,106,46,.28);
+  --ac-ok:#2F7D62;--ac-ok-bg:rgba(47,125,98,.08);--ac-ok-ln:rgba(47,125,98,.24);
+  --ac-tk:#56609E;--ac-tk-bg:rgba(86,96,158,.08);--ac-tk-ln:rgba(86,96,158,.26);
+  --ac-wait:#3E6E96;--ac-wait-bg:rgba(62,110,150,.08);--ac-wait-ln:rgba(62,110,150,.24);
+  --ac-neu-bg:rgba(18,24,38,.04);
+  --ac-card:var(--surface);--ac-nx-bg:var(--background);--ac-sh:var(--shadow-md);
+}
+/* Lote 7.2 (teste): séries extras --c6..--c8 continuam disponíveis (aliases acima). */
+:root{--c6:var(--chart-series-6);--c7:var(--chart-series-7);--c8:var(--chart-series-8)}
+
+/* ---------- 6. Impressão / PDF: sempre a paleta clara ---------- */
+@media print{
+  :root,:root[data-tema="claro"]{
+    --background:#FFFFFF;--surface:#FFFFFF;--surface-sunken:#F3F5F9;--surface-elevated:#FFFFFF;--surface-strong:#E3E8F1;--surface-card:#FFFFFF;--surface-glass:#FFFFFF;--surface-glass-strong:#FFFFFF;
+    --border:#D9DFEA;--border-strong-soft:#C3CCDB;--text-primary:#121826;--text-secondary:#3A4459;--text-tertiary:#5A6478;
+    --accent:#1F5FD1;--accent-alt:#5B56A0;--success:#0F7A47;--warning:#8A5A00;--danger:#C22745;
+    --chart-series-1:#1F5FD1;--chart-series-2:#5B56A0;--chart-series-3:#0F7A47;--chart-series-4:#B07400;--chart-series-5:#C4005F;
+    --shadow-sm:none;--shadow-md:none;--shadow-lg:none;--ac-card:#FFFFFF;
+  }
+}

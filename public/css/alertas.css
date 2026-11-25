@@ -1,0 +1,30 @@
+/* 12/11/2026: faixa única no topo para prazos na janela de 8 h (js/alertas.js). Sem pilha, sem animação de entrada. Tema claro/escuro via tokens. */
+body.al-faixa-ativa{padding-top:var(--al-faixa-h,0)}
+.alertas{position:fixed;top:0;left:0;right:0;z-index:45;padding:env(safe-area-inset-top,0) 0 0;background:var(--surface-2);border-bottom:1px solid var(--line-2);box-shadow:var(--shadow);font-family:var(--font)}
+.al-topo{display:flex;align-items:center;gap:8px;padding:6px 12px 4px;max-width:1320px;margin:0 auto}
+.al-titulo{font-size:var(--fs-12);color:var(--text-2);font-weight:600;letter-spacing:.02em;flex:1;min-width:0}
+.al-ativar-notif,.al-fechar-todos{background:none;border:0;color:var(--text-3);font-size:var(--fs-12);cursor:pointer;padding:4px 6px;border-radius:var(--r-s);white-space:nowrap}
+.al-ativar-notif:hover,.al-fechar-todos:hover{color:var(--text)}
+.al-lista{max-width:1320px;margin:0 auto;max-height:40vh;overflow:auto;display:flex;flex-direction:column;gap:0;padding:0 8px 8px}
+.al-item{position:relative;display:flex;align-items:flex-end;gap:10px;background:var(--surface);border:1px solid var(--line-2);border-left:3px solid var(--warn);border-radius:var(--r-m);padding:8px 34px 8px 12px}
+.al-item.al-atrasado{border-left-color:var(--danger)}
+.al-corpo{flex:1;min-width:0}
+.al-card{font-size:var(--fs-12);color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.al-acao{font-size:var(--fs-13);color:var(--text);line-height:1.35;margin-top:1px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.al-prazo{font-size:var(--fs-12);color:var(--text-2);margin-top:2px}
+.al-dias{font-weight:600;color:var(--warn)}
+.al-atrasado .al-dias{color:var(--danger)}
+.al-acoes{flex:none}
+.al-x{position:absolute;top:4px;right:6px;width:26px;height:26px;border:0;background:none;color:var(--text-3);font-size:18px;line-height:1;cursor:pointer;border-radius:var(--r-s)}
+.al-x:hover{color:var(--text);background:var(--surface-3)}
+.al-x:focus-visible,.al-fechar-todos:focus-visible,.al-ativar-notif:focus-visible{outline:none;box-shadow:var(--focus)}
+:root[data-tema="claro"] .alertas{background:var(--surface)}
+:root[data-tema="claro"] .al-item{background:var(--surface-2)}
+@media (max-width:640px){
+  .al-topo{padding:4px 10px 2px}
+  .al-lista{padding:0 6px 6px;max-height:34vh;gap:4px}
+  .al-item{padding:6px 28px 6px 8px;gap:6px;align-items:center}
+  .al-acao{-webkit-line-clamp:2}
+  .alertas .btn{padding:4px 8px;font-size:var(--fs-12);min-height:32px}
+}
+@media print{.alertas{display:none!important}body.al-faixa-ativa{padding-top:0}}

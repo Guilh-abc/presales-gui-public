@@ -1,0 +1,46 @@
+{
+  "name": "Plataforma - Controle Geral de Pré Venda",
+  "short_name": "Controle Geral",
+  "description": "Plataforma - Controle Geral de Pré Venda: carteira de projetos, tarefas, resumo da diretoria e qualidade dos dados.",
+  "id": "/",
+  "start_url": "/#carteira",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "lang": "pt-BR",
+  "background_color": "#E6EDF3",
+  "theme_color": "#E6EDF3",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Registro rápido",
+      "short_name": "Rápido",
+      "url": "/rapido.html",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}
